@@ -294,7 +294,7 @@ public static class PlayerSetupBuilder
         if (player == null)
             player = new GameObject("Player");
 
-        player.transform.position = new Vector3(-4f, -2.38f, 0f);
+        player.transform.position = new Vector3(-2.2f, -2.38f, 0f);
 
         SpriteRenderer renderer = player.GetComponent<SpriteRenderer>();
         if (renderer == null)
@@ -345,7 +345,7 @@ public static class PlayerSetupBuilder
             return;
 
         Vector2 desiredOffset = new Vector2(0f, 0.9f);
-        Vector3 desiredPosition = new Vector3(-4f, -2.38f, 0f);
+        Vector3 desiredPosition = new Vector3(-2.2f, -2.38f, 0f);
         if (collider.offset == desiredOffset && player.transform.position == desiredPosition)
             return;
 

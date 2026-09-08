@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -29,6 +30,7 @@ public sealed class PlayerController2D : MonoBehaviour
     private float jumpBufferCounter;
     private bool jumpHeld;
     private bool isGrounded;
+    private bool isDroppingThroughPlatform;
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int VerticalSpeedHash = Animator.StringToHash("VerticalSpeed");
@@ -58,6 +60,9 @@ public sealed class PlayerController2D : MonoBehaviour
             jumpBufferCounter -= Time.deltaTime;
 
         jumpHeld = keyboard.spaceKey.isPressed;
+
+        if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame)
+            TryDropThroughPlatform();
 
         if (horizontalInput > 0.01f)
             spriteRenderer.flipX = false;
@@ -95,6 +100,40 @@ public sealed class PlayerController2D : MonoBehaviour
         Vector2 origin = new Vector2(bounds.center.x, bounds.min.y + 0.02f);
         Vector2 size = new Vector2(bounds.size.x * 0.82f, 0.08f);
         return Physics2D.BoxCast(origin, size, 0f, Vector2.down, groundCheckDistance, groundMask);
+    }
+
+    private void TryDropThroughPlatform()
+    {
+        if (isDroppingThroughPlatform || bodyCollider == null)
+            return;
+
+        Bounds bounds = bodyCollider.bounds;
+        Vector2 origin = new Vector2(bounds.center.x, bounds.min.y);
+        Vector2 size = new Vector2(bounds.size.x * 0.8f, 0.25f);
+        Collider2D[] hits = Physics2D.OverlapBoxAll(origin, size, 0f, groundMask);
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit == null || hit.GetComponent<PlatformEffector2D>() == null)
+                continue;
+
+            StartCoroutine(DropThroughTemporarily(hit));
+            break;
+        }
+    }
+
+    private IEnumerator DropThroughTemporarily(Collider2D platformCollider)
+    {
+        isDroppingThroughPlatform = true;
+        Physics2D.IgnoreCollision(bodyCollider, platformCollider, true);
+        body.linearVelocity = new Vector2(body.linearVelocityX, -2f);
+
+        yield return new WaitForSeconds(0.35f);
+
+        if (bodyCollider != null && platformCollider != null)
+            Physics2D.IgnoreCollision(bodyCollider, platformCollider, false);
+
+        isDroppingThroughPlatform = false;
     }
 
     private void UpdateAnimator()

@@ -1,0 +1,489 @@
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------------------------------------------
+% Paquetes
+% ------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+% ------------------------------------------------------------
+% Identidad visual
+% ------------------------------------------------------------
+\definecolor{zombieDark}{HTML}{111820}
+\definecolor{zombieGreen}{HTML}{87A96B}
+\definecolor{zombieLight}{HTML}{EEF3E8}
+\definecolor{warningOrange}{HTML}{D9822B}
+\definecolor{metalBlue}{HTML}{40576D}
+\definecolor{softGray}{HTML}{F3F5F7}
+\definecolor{textDark}{HTML}{20262D}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=metalBlue,
+  urlcolor=warningOrange,
+  pdftitle={Documentación de ZombieTech},
+  pdfauthor={Romario Anchaise}
+}
+
+\titleformat{\section}
+  {\Large\bfseries\color{zombieDark}}
+  {\thesection}{0.7em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{metalBlue}}
+  {\thesubsection}{0.7em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{ZombieTech}}
+\fancyhead[R]{Documentación del proyecto}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.25em}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=0.3em}
+\renewcommand{\arraystretch}{1.25}
+
+\newtcolorbox{gamebox}[1]{
+  enhanced,
+  breakable,
+  colback=zombieLight,
+  colframe=zombieGreen,
+  boxrule=0.8pt,
+  arc=2mm,
+  title=\textbf{#1},
+  coltitle=white,
+  colbacktitle=zombieGreen
+}
+
+\newtcolorbox{unitybox}[1]{
+  enhanced,
+  breakable,
+  colback=softGray,
+  colframe=metalBlue,
+  boxrule=0.8pt,
+  arc=2mm,
+  title=\textbf{Dónde está en Unity: #1},
+  coltitle=white,
+  colbacktitle=metalBlue
+}
+
+\newtcolorbox{warningbox}[1]{
+  enhanced,
+  breakable,
+  colback=warningOrange!8,
+  colframe=warningOrange,
+  boxrule=0.8pt,
+  arc=2mm,
+  title=\textbf{#1},
+  coltitle=white,
+  colbacktitle=warningOrange
+}
+
+\lstdefinestyle{projecttree}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{zombieDark},
+  basicstyle=\ttfamily\small\color{white},
+  frame=single,
+  rulecolor=\color{metalBlue},
+  breaklines=true,
+  columns=fullflexible,
+  showstringspaces=false
+}
+
+\newcommand{\component}[1]{\textbf{\textcolor{metalBlue}{#1}}}
+\newcommand{\keycap}[1]{\fcolorbox{metalBlue}{softGray}{\texttt{#1}}}
+
+\begin{document}
+
+% ------------------------------------------------------------
+% Portada
+% ------------------------------------------------------------
+\begin{titlepage}
+  \pagecolor{zombieDark}
+  \color{white}
+  \centering
+  \vspace*{1.2cm}
+
+  {\Huge\bfseries ZOMBIETECH\par}
+  \vspace{0.25cm}
+  {\Large Videojuego 2D de plataformas y supervivencia\par}
+  \vspace{0.9cm}
+
+  \includegraphics[width=\textwidth,height=0.43\textheight,keepaspectratio]{Assets/Art/Backgrounds/ZombieCityBackground.png}
+
+  \vfill
+  \begin{tcolorbox}[colback=white!8,colframe=zombieGreen,width=0.78\textwidth,arc=3mm]
+    \centering\color{white}
+    \textbf{Autor:} Romario Anchaise\\[0.2cm]
+    \textbf{Motor:} Unity 6.3 LTS\\[0.2cm]
+    \textbf{Lenguaje:} C\#\\[0.2cm]
+    \textbf{Estado:} Prototipo jugable
+  \end{tcolorbox}
+
+  \vfill
+  {\large Documentación técnica y funcional\par}
+  {\small Septiembre de 2026\par}
+\end{titlepage}
+
+\nopagecolor
+\color{textDark}
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------
+\section{El proyecto en un vistazo}
+
+ZombieTech es un juego de plataformas 2D ambientado en una ciudad destruida por un brote zombi. El jugador controla a un superviviente capaz de caminar, saltar y utilizar objetos del escenario como plataformas. La meta futura será atravesar el nivel, recoger recursos y sobrevivir a los enemigos.
+
+\begin{gamebox}{Lo que ya funciona}
+\begin{itemize}
+  \item Movimiento horizontal con aceleración y desaceleración.
+  \item Salto completo, salto corto, tiempo de gracia y buffer de entrada.
+  \item Animaciones de reposo, caminata, salto y caída.
+  \item Giro automático del personaje hacia la izquierda o derecha.
+  \item Suelo, automóvil destruido y barrera de concreto con físicas 2D.
+  \item Plataformas sin paredes laterales y descenso con una tecla.
+  \item Fondo urbano posapocalíptico y música ambiental en bucle.
+\end{itemize}
+\end{gamebox}
+
+\begin{center}
+\begin{tcolorbox}[width=0.92\textwidth,colback=metalBlue!8,colframe=metalBlue,arc=2mm]
+\centering
+\textbf{Teclado} $\longrightarrow$ \textbf{PlayerController2D}
+$\longrightarrow$ \textbf{Rigidbody2D}
+$\longrightarrow$ \textbf{Animator}
+$\longrightarrow$ \textbf{Sprite visible}
+\end{tcolorbox}
+\end{center}
+
+% ------------------------------------------------------------
+\section{Controles del jugador}
+
+\rowcolors{2}{softGray}{white}
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.34\textwidth}X}
+\toprule
+Acción & Teclas \\
+\midrule
+Caminar a la izquierda & \keycap{A} o flecha izquierda \\
+Caminar a la derecha & \keycap{D} o flecha derecha \\
+Saltar & Barra espaciadora \\
+Salto corto & Soltar la barra espaciadora antes de llegar a la altura máxima \\
+Bajar por una plataforma & \keycap{S} o flecha abajo \\
+\bottomrule
+\end{tabularx}
+
+% ------------------------------------------------------------
+\section{Mapa de la ventana Hierarchy}
+
+La ventana \textbf{Hierarchy} muestra todos los objetos que forman la escena abierta. En este proyecto se debe abrir \path{Assets/Scenes/SampleScene.unity}.
+
+\begin{lstlisting}[style=projecttree]
+SampleScene
+|-- Main Camera
+|-- Global Light 2D
+|-- Environment
+|   |-- Background_ZombieCity
+|   `-- Jumpable Environment
+|       |-- Wrecked Car
+|       `-- Concrete Barrier
+|-- GroundCollider
+`-- Player
+\end{lstlisting}
+
+\begin{warningbox}{Objeto que aparece únicamente durante Play}
+El objeto \texttt{Background Music} se crea mediante código cuando empieza el juego. Por eso no aparece en la jerarquía mientras Unity está en modo de edición.
+\end{warningbox}
+
+% ------------------------------------------------------------
+\section{Qué tiene cada objeto en Unity}
+
+\subsection{Player}
+
+\begin{unitybox}{Hierarchy $>$ Player}
+Seleccionar \textbf{Player}. Sus componentes aparecen en la ventana \textbf{Inspector}.
+\end{unitybox}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.29\textwidth}X}
+\toprule
+Componente & Función \\
+\midrule
+Transform & Guarda la posición, rotación y escala del jugador. La posición inicial es $(-2.2,-2.38,0)$. \\
+Sprite Renderer & Dibuja el sprite actual y permite invertirlo con \texttt{Flip X}. Su \texttt{Sorting Order} es 10. \\
+Rigidbody 2D & Aplica gravedad, velocidad y respuesta física. Tiene gravedad 3.2, rotación bloqueada e interpolación activada. \\
+Capsule Collider 2D & Representa el cuerpo físico del jugador. Su tamaño es $0.72\times1.72$ y su desplazamiento vertical es 0.9. \\
+Animator & Reproduce y cambia entre las animaciones \texttt{Idle}, \texttt{Walk}, \texttt{Jump} y \texttt{Fall}. \\
+Player Controller 2D & Script que lee el teclado, calcula movimiento y salto, detecta el suelo y actualiza el Animator. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{GroundCollider}
+
+\begin{unitybox}{Hierarchy $>$ GroundCollider}
+Este objeto está en la capa \texttt{Ground}. No tiene imagen: únicamente representa el piso físico alineado con la calle.
+\end{unitybox}
+
+\begin{itemize}
+  \item \component{Transform}: posición $(0,-2.52,0)$.
+  \item \component{Box Collider 2D}: tamaño $18\times0.35$.
+  \item Su parte superior coincide con el suelo visible del fondo.
+\end{itemize}
+
+\subsection{Environment}
+
+\begin{unitybox}{Hierarchy $>$ Environment}
+Es un objeto organizador. Agrupa el fondo y las plataformas asociadas a los elementos dibujados en el escenario.
+\end{unitybox}
+
+\subsubsection*{Background\_ZombieCity}
+
+\begin{itemize}
+  \item \component{Transform}: escala el fondo para cubrir la altura de la cámara.
+  \item \component{Sprite Renderer}: muestra \path{ZombieCityBackground.png}.
+  \item \texttt{Sorting Order}: $-100$, para permanecer detrás del jugador.
+\end{itemize}
+
+\subsubsection*{Jumpable Environment}
+
+Es el contenedor de los objetos sobre los cuales se puede aterrizar:
+
+\begin{itemize}
+  \item \textbf{Wrecked Car}: superficie sobre el automóvil destruido de la izquierda.
+  \item \textbf{Concrete Barrier}: superficie sobre la barrera central.
+\end{itemize}
+
+Cada uno posee:
+
+\begin{itemize}
+  \item \component{Box Collider 2D}: define la zona superior que detecta al jugador.
+  \item \component{Platform Effector 2D}: permite atravesar el objeto desde abajo y elimina las paredes invisibles laterales.
+  \item Capa \texttt{Ground}: permite que el personaje lo reconozca como superficie válida.
+\end{itemize}
+
+\subsection{Main Camera}
+
+\begin{unitybox}{Hierarchy $>$ Main Camera}
+La cámara utiliza proyección ortográfica, adecuada para juegos 2D. Su tamaño ortográfico es 5 y se encuentra en $(0,0,-10)$.
+\end{unitybox}
+
+Componentes:
+
+\begin{itemize}
+  \item \component{Transform}: ubicación de la cámara.
+  \item \component{Camera}: configura la proyección y el área visible.
+  \item \component{Audio Listener}: permite escuchar la música y los futuros efectos.
+  \item \component{Universal Additional Camera Data}: opciones de Universal Render Pipeline.
+\end{itemize}
+
+\subsection{Global Light 2D}
+
+\begin{unitybox}{Hierarchy $>$ Global Light 2D}
+Contiene el componente \component{Light 2D}. Ilumina globalmente los sprites que utilizan materiales compatibles con URP 2D.
+\end{unitybox}
+
+% ------------------------------------------------------------
+\section{Carpetas y archivos importantes}
+
+Todo el contenido creado para el juego se encuentra dentro de la ventana \textbf{Project}, en la carpeta \textbf{Assets}.
+
+\begin{lstlisting}[style=projecttree]
+Assets/
+|-- Animations/Player/
+|   |-- PlayerAnimator.controller
+|   |-- Player_Idle.anim
+|   |-- Player_Walk.anim
+|   |-- Player_Jump.anim
+|   `-- Player_Fall.anim
+|-- Art/
+|   |-- Backgrounds/ZombieCityBackground.png
+|   `-- Characters/Survivor/Processed/
+|       |-- Survivor_Walk.png
+|       `-- Survivor_JumpFall.png
+|-- Editor/
+|   |-- PlayerSetupBuilder.cs
+|   |-- ZombieBackgroundInstaller.cs
+|   `-- EnvironmentPlatformInstaller.cs
+|-- Resources/Audio/BecomeTheAssassin.mp3
+|-- Scenes/SampleScene.unity
+|-- Scripts/
+|   |-- PlayerController2D.cs
+|   `-- BackgroundMusic.cs
+`-- Settings/
+\end{lstlisting}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.30\textwidth}X}
+\toprule
+Carpeta & Qué contiene \\
+\midrule
+Animations & Clips de animación y controlador de estados del personaje. \\
+Art & Imágenes del escenario y hojas de sprites. \\
+Editor & Herramientas que configuran automáticamente objetos dentro de Unity. No forman parte del ejecutable final. \\
+Resources & Recursos cargados mediante código durante la ejecución. \\
+Scenes & Escenas jugables del proyecto. \\
+Scripts & Comportamiento que se ejecuta dentro del juego. \\
+Settings & Configuración del renderizado 2D y del sistema de entrada. \\
+\bottomrule
+\end{tabularx}
+
+% ------------------------------------------------------------
+\section{Sistema de movimiento y físicas}
+
+El archivo principal es \path{Assets/Scripts/PlayerController2D.cs}. Utiliza el nuevo \textbf{Input System} de Unity y modifica la velocidad de \texttt{Rigidbody2D} durante \texttt{FixedUpdate}.
+
+\begin{tabularx}{\textwidth}{>{\bfseries}X r}
+\toprule
+Parámetro mostrado en Player Controller 2D & Valor \\
+\midrule
+Move Speed & 5.5 \\
+Acceleration & 45 \\
+Deceleration & 55 \\
+Jump Force & 11.5 \\
+Maximum Fall Speed & 18 \\
+Coyote Time & 0.12 s \\
+Jump Buffer Time & 0.12 s \\
+Short Jump Multiplier & 0.5 \\
+Ground Check Distance & 0.12 \\
+\bottomrule
+\end{tabularx}
+
+\begin{gamebox}{Detalles que hacen agradable el control}
+\textbf{Coyote Time}: permite saltar durante 0.12 segundos después de abandonar un borde.\\
+\textbf{Jump Buffer}: recuerda durante 0.12 segundos una pulsación hecha justo antes de aterrizar.\\
+\textbf{Salto variable}: si se suelta pronto la barra espaciadora, el impulso vertical disminuye.
+\end{gamebox}
+
+% ------------------------------------------------------------
+\section{Animator y sprites}
+
+\begin{unitybox}{Project $>$ Assets $>$ Animations $>$ Player $>$ PlayerAnimator.controller}
+Hacer doble clic en el controlador abre la ventana \textbf{Animator}. Allí se pueden ver los estados y sus transiciones.
+\end{unitybox}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.20\textwidth}p{0.27\textwidth}X}
+\toprule
+Estado & Archivo & Cuándo se utiliza \\
+\midrule
+Idle & \texttt{Player\_Idle.anim} & El personaje está en el suelo sin moverse. \\
+Walk & \texttt{Player\_Walk.anim} & Existe entrada horizontal. \\
+Jump & \texttt{Player\_Jump.anim} & El personaje está en el aire y asciende. \\
+Fall & \texttt{Player\_Fall.anim} & El personaje está en el aire y desciende. \\
+\bottomrule
+\end{tabularx}
+
+Parámetros del Animator:
+
+\begin{itemize}
+  \item \texttt{Speed}: valor absoluto de la entrada horizontal.
+  \item \texttt{VerticalSpeed}: velocidad vertical del \texttt{Rigidbody2D}.
+  \item \texttt{IsGrounded}: indica si el personaje está tocando una superficie de la capa \texttt{Ground}.
+\end{itemize}
+
+% ------------------------------------------------------------
+\section{Música de fondo}
+
+La canción se encuentra en \path{Assets/Resources/Audio/BecomeTheAssassin.mp3}. El archivo \path{Assets/Scripts/BackgroundMusic.cs} la carga antes de abrir la escena.
+
+\begin{gamebox}{Configuración del Audio Source}
+\begin{itemize}
+  \item Volumen: 30\%.
+  \item Loop: activado.
+  \item Spatial Blend: 0, por lo que funciona como audio 2D.
+  \item \texttt{DontDestroyOnLoad}: conserva la música al cambiar de escena.
+\end{itemize}
+\end{gamebox}
+
+Para verla en Unity: presionar \textbf{Play} y buscar \texttt{Background Music} en \textbf{Hierarchy}. Al seleccionarla aparecerá el componente \component{Audio Source} en el Inspector.
+
+% ------------------------------------------------------------
+\section{Herramientas automáticas del editor}
+
+Unity muestra opciones adicionales en el menú superior:
+
+\begin{itemize}
+  \item \textbf{Tools $>$ Zombie Game $>$ Configurar personaje jugable}.
+  \item \textbf{Tools $>$ Zombie Game $>$ Agregar fondo a la escena}.
+  \item \textbf{Tools $>$ Zombie Game $>$ Configurar objetos saltables}.
+\end{itemize}
+
+Estas opciones reconstruyen o corrigen elementos importantes sin tener que configurarlos manualmente uno por uno.
+
+% ------------------------------------------------------------
+\section{Cómo abrir y probar el proyecto}
+
+\begin{enumerate}
+  \item Abrir \textbf{Unity Hub}.
+  \item Seleccionar \textbf{Add project from disk}.
+  \item Elegir la carpeta raíz de ZombieTech.
+  \item Esperar a que Unity importe los recursos.
+  \item Abrir \path{Assets/Scenes/SampleScene.unity}.
+  \item Presionar \textbf{Play}.
+  \item Probar movimiento, salto, descenso por plataformas y música.
+\end{enumerate}
+
+\begin{warningbox}{Si Unity muestra un aviso de cambio externo}
+Seleccionar \textbf{Reload} para cargar la escena actualizada. Elegir \textbf{Ignore} mantiene temporalmente la versión anterior que estaba abierta.
+\end{warningbox}
+
+% ------------------------------------------------------------
+\section{Misión rápida de pruebas}
+
+\begin{tabularx}{\textwidth}{p{0.08\textwidth}X X}
+\toprule
+ & Prueba & Resultado esperado \\
+\midrule
+$\square$ & Caminar en ambas direcciones & El sprite gira y reproduce \texttt{Walk}. \\
+$\square$ & Mantener espacio & El personaje realiza un salto completo. \\
+$\square$ & Soltar espacio rápidamente & El salto termina a menor altura. \\
+$\square$ & Saltar sobre la barrera & El personaje aterriza sobre la parte visible. \\
+$\square$ & Caminar por un costado & Cae sin chocar con paredes invisibles. \\
+$\square$ & Pulsar \keycap{S} sobre la barrera & Atraviesa la plataforma y vuelve al suelo. \\
+$\square$ & Escuchar durante varios segundos & La música continúa y vuelve a empezar. \\
+\bottomrule
+\end{tabularx}
+
+% ------------------------------------------------------------
+\section{Qué falta para convertirlo en un juego completo}
+
+\begin{enumerate}
+  \item Importar sprites de zombis y crear sus animaciones.
+  \item Programar patrullaje, persecución y ataque de enemigos.
+  \item Implementar salud, daño, muerte y reinicio.
+  \item Añadir botiquines, agua, baterías u otros coleccionables.
+  \item Crear una cámara que siga al jugador.
+  \item Incorporar interfaz de vida, objetivo y objetos recogidos.
+  \item Agregar efectos de sonido para pasos, salto, daño y zombis.
+  \item Crear condiciones de victoria y derrota.
+  \item Diseñar menú principal, pausa y pantalla final.
+  \item Generar y probar una compilación para Windows.
+\end{enumerate}
+
+% ------------------------------------------------------------
+\section{Recursos, licencias y repositorio}
+
+El repositorio del proyecto es:
+
+\begin{center}
+\url{https://github.com/romario-anchaise/ZombieTech}
+\end{center}
+
+Antes de distribuir el juego se debe comprobar la licencia de cada imagen, sprite y audio. Los recursos externos deben conservar sus archivos de licencia y los créditos exigidos por sus autores. Para futuros elementos se recomienda utilizar recursos CC0 o con autorización explícita para videojuegos.
+
+\begin{gamebox}{Estado actual del avance}
+El prototipo ya posee la base jugable: escenario, personaje animado, movimiento, salto, colisiones, plataformas integradas con el fondo y música. El siguiente gran paso recomendado es añadir el primer zombi con patrullaje y daño.
+\end{gamebox}
+
+\end{document}
