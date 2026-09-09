@@ -104,6 +104,21 @@
   showstringspaces=false
 }
 
+\lstdefinestyle{codestyle}{
+  language=[Sharp]C,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{metalBlue}\bfseries,
+  stringstyle=\color{warningOrange},
+  commentstyle=\color{zombieGreen!70!black},
+  backgroundcolor=\color{softGray},
+  frame=single,
+  rulecolor=\color{metalBlue!50},
+  breaklines=true,
+  columns=fullflexible,
+  showstringspaces=false,
+  tabsize=2
+}
+
 \newcommand{\component}[1]{\textbf{\textcolor{metalBlue}{#1}}}
 \newcommand{\keycap}[1]{\fcolorbox{metalBlue}{softGray}{\texttt{#1}}}
 
@@ -184,6 +199,7 @@ Caminar a la derecha & \keycap{D} o flecha derecha \\
 Saltar & Barra espaciadora \\
 Salto corto & Soltar la barra espaciadora antes de llegar a la altura máxima \\
 Bajar por una plataforma & \keycap{S} o flecha abajo \\
+Disparar estando quieto & \keycap{F} o \keycap{Ctrl izquierdo} \\
 \bottomrule
 \end{tabularx}
 
@@ -226,7 +242,7 @@ Transform & Guarda la posición, rotación y escala del jugador. La posición in
 Sprite Renderer & Dibuja el sprite actual y permite invertirlo con \texttt{Flip X}. Su \texttt{Sorting Order} es 10. \\
 Rigidbody 2D & Aplica gravedad, velocidad y respuesta física. Tiene gravedad 3.2, rotación bloqueada e interpolación activada. \\
 Capsule Collider 2D & Representa el cuerpo físico del jugador. Su tamaño es $0.72\times1.72$ y su desplazamiento vertical es 0.9. \\
-Animator & Reproduce y cambia entre las animaciones \texttt{Idle}, \texttt{Walk}, \texttt{Jump} y \texttt{Fall}. \\
+Animator & Reproduce y cambia entre las animaciones \texttt{Idle}, \texttt{Walk}, \texttt{Jump}, \texttt{Fall} y \texttt{Shoot}. \\
 Player Controller 2D & Script que lee el teclado, calcula movimiento y salto, detecta el suelo y actualiza el Animator. \\
 \bottomrule
 \end{tabularx}
@@ -307,12 +323,14 @@ Assets/
 |   |-- Player_Idle.anim
 |   |-- Player_Walk.anim
 |   |-- Player_Jump.anim
-|   `-- Player_Fall.anim
+|   |-- Player_Fall.anim
+|   `-- Player_Shoot.anim
 |-- Art/
 |   |-- Backgrounds/ZombieCityBackground.png
 |   `-- Characters/Survivor/Processed/
 |       |-- Survivor_Walk.png
-|       `-- Survivor_JumpFall.png
+|       |-- Survivor_JumpFall.png
+|       `-- Survivor_Shoot.png
 |-- Editor/
 |   |-- PlayerSetupBuilder.cs
 |   |-- ZombieBackgroundInstaller.cs
@@ -322,6 +340,10 @@ Assets/
 |-- Scripts/
 |   |-- PlayerController2D.cs
 |   `-- BackgroundMusic.cs
+|-- Materials/
+|   |-- PlayerCheckerboardKey.mat
+|   `-- PlayerShootCheckerboardKey.mat
+|-- Shaders/CheckerboardKeySprite.shader
 `-- Settings/
 \end{lstlisting}
 
@@ -381,6 +403,7 @@ Idle & \texttt{Player\_Idle.anim} & El personaje está en el suelo sin moverse. 
 Walk & \texttt{Player\_Walk.anim} & Existe entrada horizontal. \\
 Jump & \texttt{Player\_Jump.anim} & El personaje está en el aire y asciende. \\
 Fall & \texttt{Player\_Fall.anim} & El personaje está en el aire y desciende. \\
+Shoot & \texttt{Player\_Shoot.anim} & El personaje está quieto y pulsa la tecla de disparo. \\
 \bottomrule
 \end{tabularx}
 
@@ -390,7 +413,46 @@ Parámetros del Animator:
   \item \texttt{Speed}: valor absoluto de la entrada horizontal.
   \item \texttt{VerticalSpeed}: velocidad vertical del \texttt{Rigidbody2D}.
   \item \texttt{IsGrounded}: indica si el personaje está tocando una superficie de la capa \texttt{Ground}.
+  \item \texttt{Shoot}: activa la animación de seis frames al pulsar \keycap{F} o \keycap{Ctrl izquierdo}.
 \end{itemize}
+
+\subsection{Cómo se prepararon los frames}
+
+Las hojas se guardaron en \path{Assets/Art/Characters/Survivor/Processed/}. La herramienta \path{PlayerSetupBuilder.cs} configura cada textura como \textbf{Sprite (2D and UI)}, activa \textbf{Sprite Mode: Multiple}, divide la imagen horizontalmente y asigna un pivote en $(0.5,0.18)$ para conservar los pies alineados.
+
+\begin{tabularx}{\textwidth}{>{\bfseries}X r X}
+\toprule
+Hoja & División & Resultado \\
+\midrule
+\texttt{Survivor\_Walk.png} & 8 & Reposo y caminata \\
+\texttt{Survivor\_JumpFall.png} & 6 & Cuatro frames de salto y dos de caída \\
+\texttt{Survivor\_Shoot.png} & 6 & Secuencia completa de disparo \\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}X r r}
+\toprule
+Clip & FPS & Loop \\
+\midrule
+\texttt{Player\_Idle.anim} & 1 & Sí \\
+\texttt{Player\_Walk.anim} & 10 & Sí \\
+\texttt{Player\_Jump.anim} & 8 & No \\
+\texttt{Player\_Fall.anim} & 6 & No \\
+\texttt{Player\_Shoot.anim} & 12 & No \\
+\bottomrule
+\end{tabularx}
+
+Todos los sprites utilizan 300 \textbf{Pixels Per Unit} y no generan mipmaps. La hoja de disparo usa filtro \textbf{Point} y compresión desactivada para impedir que Unity mezcle los colores del fondo entre píxeles o frames.
+
+\begin{unitybox}{Project $>$ Assets $>$ Art $>$ Characters $>$ Survivor $>$ Processed}
+Seleccionar una hoja y revisar su importación en \textbf{Inspector}. La flecha situada junto al archivo muestra los sprites individuales. El botón \textbf{Sprite Editor} permite ver sus rectángulos y pivotes.
+\end{unitybox}
+
+\subsection{Corrección visual del disparo}
+
+La hoja original tenía un tablero blanco y gris incrustado en la imagen. Se creó \path{PlayerShootCheckerboardKey.mat} con el shader \path{CheckerboardKeySprite.shader}. Este shader descarta los tonos neutros del tablero. \path{PlayerController2D.cs} aplica el material durante 0.5 segundos y después restaura el material normal.
+
+La acción solo se permite cuando el personaje está en el suelo y quieto. En el avance actual el disparo es visual: todavía no crea un proyectil ni causa daño.
 
 % ------------------------------------------------------------
 \section{Música de fondo}
@@ -408,6 +470,33 @@ La canción se encuentra en \path{Assets/Resources/Audio/BecomeTheAssassin.mp3}.
 
 Para verla en Unity: presionar \textbf{Play} y buscar \texttt{Background Music} en \textbf{Hierarchy}. Al seleccionarla aparecerá el componente \component{Audio Source} en el Inspector.
 
+\subsection{Procedimiento utilizado}
+
+\begin{enumerate}
+  \item Se copió \texttt{BecomeTheAssassin.mp3} a \path{Assets/Resources/Audio/}.
+  \item Se creó \path{Assets/Scripts/BackgroundMusic.cs}.
+  \item El atributo \texttt{RuntimeInitializeOnLoadMethod} inicia el sistema antes de cargar la escena.
+  \item \texttt{Resources.Load} busca el clip sin escribir la extensión del archivo.
+  \item El código crea \texttt{Background Music} y agrega un componente \component{Audio Source}.
+  \item Se activa la repetición, se asigna volumen 0.3 y audio completamente 2D.
+  \item \texttt{DontDestroyOnLoad} conserva el reproductor al cambiar de escena.
+\end{enumerate}
+
+\begin{lstlisting}[style=codestyle]
+AudioClip musicClip =
+    Resources.Load<AudioClip>("Audio/BecomeTheAssassin");
+
+GameObject musicObject = new GameObject("Background Music");
+Object.DontDestroyOnLoad(musicObject);
+
+AudioSource audioSource = musicObject.AddComponent<AudioSource>();
+audioSource.clip = musicClip;
+audioSource.loop = true;
+audioSource.volume = 0.3f;
+audioSource.spatialBlend = 0f;
+audioSource.Play();
+\end{lstlisting}
+
 % ------------------------------------------------------------
 \section{Herramientas automáticas del editor}
 
@@ -420,6 +509,73 @@ Unity muestra opciones adicionales en el menú superior:
 \end{itemize}
 
 Estas opciones reconstruyen o corrigen elementos importantes sin tener que configurarlos manualmente uno por uno.
+
+% ------------------------------------------------------------
+\section{Código de la jugabilidad}
+
+\subsection{Movimiento horizontal}
+
+La entrada se lee en \texttt{Update}; la velocidad del \component{Rigidbody 2D} se modifica en \texttt{FixedUpdate}. De esta manera el movimiento se mantiene estable con la simulación física.
+
+\begin{lstlisting}[style=codestyle]
+float targetSpeed = horizontalInput * moveSpeed;
+float changeRate = Mathf.Abs(targetSpeed) > 0.01f
+    ? acceleration
+    : deceleration;
+
+float nextSpeed = Mathf.MoveTowards(
+    body.linearVelocityX,
+    targetSpeed,
+    changeRate * Time.fixedDeltaTime);
+
+body.linearVelocity = new Vector2(nextSpeed, body.linearVelocityY);
+\end{lstlisting}
+
+\subsection{Salto completo y salto corto}
+
+\begin{lstlisting}[style=codestyle]
+if (jumpBufferCounter > 0f && coyoteCounter > 0f)
+{
+    body.linearVelocity =
+        new Vector2(body.linearVelocityX, jumpForce);
+    jumpBufferCounter = 0f;
+    coyoteCounter = 0f;
+}
+
+if (!jumpHeld && body.linearVelocityY > 0f)
+{
+    body.linearVelocity = new Vector2(
+        body.linearVelocityX,
+        body.linearVelocityY * shortJumpMultiplier);
+}
+\end{lstlisting}
+
+\subsection{Activación del disparo}
+
+\begin{lstlisting}[style=codestyle]
+bool shootPressed = keyboard.fKey.wasPressedThisFrame ||
+                    keyboard.leftCtrlKey.wasPressedThisFrame;
+
+if (shootPressed && isGrounded &&
+    Mathf.Abs(horizontalInput) < 0.01f)
+{
+    animator.SetTrigger(ShootHash);
+    shootMaterialRoutine =
+        StartCoroutine(UseShootMaterialTemporarily());
+}
+\end{lstlisting}
+
+\subsection{Comunicación con el Animator}
+
+\begin{lstlisting}[style=codestyle]
+animator.SetFloat(SpeedHash, Mathf.Abs(horizontalInput));
+animator.SetFloat(VerticalSpeedHash, body.linearVelocityY);
+animator.SetBool(GroundedHash, isGrounded);
+\end{lstlisting}
+
+\begin{gamebox}{Buenas prácticas demostradas}
+Los valores ajustables son campos privados con \texttt{[SerializeField]}; las constantes y hashes evitan repetir cadenas; la entrada, la física y la animación están separadas en métodos; y el código utiliza PascalCase para tipos y métodos, y camelCase para variables.
+\end{gamebox}
 
 % ------------------------------------------------------------
 \section{Cómo abrir y probar el proyecto}
@@ -452,8 +608,33 @@ $\square$ & Saltar sobre la barrera & El personaje aterriza sobre la parte visib
 $\square$ & Caminar por un costado & Cae sin chocar con paredes invisibles. \\
 $\square$ & Pulsar \keycap{S} sobre la barrera & Atraviesa la plataforma y vuelve al suelo. \\
 $\square$ & Escuchar durante varios segundos & La música continúa y vuelve a empezar. \\
+$\square$ & Pulsar \keycap{F} estando quieto & Reproduce una vez los seis frames de disparo sin mostrar el tablero de fondo. \\
 \bottomrule
 \end{tabularx}
+
+% ------------------------------------------------------------
+\section{Correspondencia con la rúbrica del Hito 1}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.25\textwidth}X p{0.17\textwidth}}
+\toprule
+Criterio & Evidencia & Estado \\
+\midrule
+Programación C\# & Campos privados serializados, nomenclatura consistente y lógica separada & Implementado \\
+Físicas y Game Feel & Rigidbody2D, FixedUpdate, aceleración, salto variable, coyote time y buffer & Implementado \\
+Colisiones y capas & Ground, CapsuleCollider2D, BoxCollider2D y PlatformEffector2D & Implementado \\
+Gestión de assets & Carpetas separadas para arte, audio, animación, materiales, escenas y código & Implementado \\
+Git & Repositorio, .gitignore y commits descriptivos & Implementado \\
+Movimiento y acción & Caminar, saltar, bajar por plataformas y animación de disparo & Implementado \\
+Interacción principal & Plataformas atravesables; el combate todavía no aplica daño & Parcial \\
+Prefabs & Aún no existe un prefab reutilizable & Pendiente \\
+Inicio y reinicio & Inicia con Play, pero no existe una función de reinicio & Pendiente \\
+Video de demostración & Debe grabarse un video de máximo dos minutos & Pendiente \\
+\bottomrule
+\end{tabularx}
+
+\begin{warningbox}{Prioridades para alcanzar la valoración máxima}
+Crear al menos un prefab reutilizable, implementar una interacción verificable como una bala que daña a un zombi o un objeto coleccionable, agregar reinicio y comprobar que la consola permanezca sin errores durante la demostración.
+\end{warningbox}
 
 % ------------------------------------------------------------
 \section{Qué falta para convertirlo en un juego completo}

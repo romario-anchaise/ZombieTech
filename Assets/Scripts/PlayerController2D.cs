@@ -21,6 +21,10 @@ public sealed class PlayerController2D : MonoBehaviour
     [SerializeField] private LayerMask groundMask;
     [SerializeField] private float groundCheckDistance = 0.12f;
 
+    [Header("Disparo")]
+    [SerializeField] private Material shootMaterial;
+    [SerializeField] private float shootAnimationDuration = 0.5f;
+
     private Rigidbody2D body;
     private CapsuleCollider2D bodyCollider;
     private SpriteRenderer spriteRenderer;
@@ -31,10 +35,13 @@ public sealed class PlayerController2D : MonoBehaviour
     private bool jumpHeld;
     private bool isGrounded;
     private bool isDroppingThroughPlatform;
+    private Material defaultMaterial;
+    private Coroutine shootMaterialRoutine;
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int VerticalSpeedHash = Animator.StringToHash("VerticalSpeed");
     private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
+    private static readonly int ShootHash = Animator.StringToHash("Shoot");
 
     private void Awake()
     {
@@ -42,6 +49,7 @@ public sealed class PlayerController2D : MonoBehaviour
         bodyCollider = GetComponent<CapsuleCollider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
+        defaultMaterial = spriteRenderer.sharedMaterial;
     }
 
     private void Update()
@@ -63,6 +71,15 @@ public sealed class PlayerController2D : MonoBehaviour
 
         if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame)
             TryDropThroughPlatform();
+
+        bool shootPressed = keyboard.fKey.wasPressedThisFrame || keyboard.leftCtrlKey.wasPressedThisFrame;
+        if (shootPressed && isGrounded && Mathf.Abs(horizontalInput) < 0.01f && animator != null)
+        {
+            animator.SetTrigger(ShootHash);
+            if (shootMaterialRoutine != null)
+                StopCoroutine(shootMaterialRoutine);
+            shootMaterialRoutine = StartCoroutine(UseShootMaterialTemporarily());
+        }
 
         if (horizontalInput > 0.01f)
             spriteRenderer.flipX = false;
@@ -134,6 +151,19 @@ public sealed class PlayerController2D : MonoBehaviour
             Physics2D.IgnoreCollision(bodyCollider, platformCollider, false);
 
         isDroppingThroughPlatform = false;
+    }
+
+    private IEnumerator UseShootMaterialTemporarily()
+    {
+        if (shootMaterial != null)
+            spriteRenderer.sharedMaterial = shootMaterial;
+
+        yield return new WaitForSeconds(shootAnimationDuration);
+
+        if (spriteRenderer != null && defaultMaterial != null)
+            spriteRenderer.sharedMaterial = defaultMaterial;
+
+        shootMaterialRoutine = null;
     }
 
     private void UpdateAnimator()

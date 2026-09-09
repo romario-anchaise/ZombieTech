@@ -4,7 +4,7 @@ Shader "ZombieGame/CheckerboardKey"
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
-        _Cutoff ("Background Cutoff", Range(0.5, 1)) = 0.72
+        _Cutoff ("Background Cutoff", Range(0.35, 1)) = 0.55
     }
 
     SubShader

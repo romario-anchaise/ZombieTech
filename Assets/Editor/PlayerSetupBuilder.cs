@@ -11,8 +11,10 @@ public static class PlayerSetupBuilder
 {
     private const string WalkSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_Walk.png";
     private const string JumpSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_JumpFall.png";
+    private const string ShootSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_Shoot.png";
     private const string AnimationFolder = "Assets/Animations/Player";
     private const string MaterialPath = "Assets/Materials/PlayerCheckerboardKey.mat";
+    private const string ShootMaterialPath = "Assets/Materials/PlayerShootCheckerboardKey.mat";
     private const string ControllerPath = AnimationFolder + "/PlayerAnimator.controller";
 
     static PlayerSetupBuilder()
@@ -32,12 +34,14 @@ public static class PlayerSetupBuilder
     {
         ConfigureSpriteSheet(WalkSheetPath, 8, "Walk");
         ConfigureSpriteSheet(JumpSheetPath, 6, "JumpFall");
+        ConfigureSpriteSheet(ShootSheetPath, 6, "Shoot");
 
         Sprite[] walkSprites = LoadSprites(WalkSheetPath);
         Sprite[] jumpSprites = LoadSprites(JumpSheetPath);
-        if (walkSprites.Length != 8 || jumpSprites.Length != 6)
+        Sprite[] shootSprites = LoadSprites(ShootSheetPath);
+        if (walkSprites.Length != 8 || jumpSprites.Length != 6 || shootSprites.Length != 6)
         {
-            Debug.LogError("No se pudo configurar el jugador: las hojas no contienen 8 y 6 sprites respectivamente.");
+            Debug.LogError("No se pudo configurar el jugador: una hoja de sprites no contiene la cantidad esperada.");
             return;
         }
 
@@ -45,21 +49,23 @@ public static class PlayerSetupBuilder
         EnsureFolder(AnimationFolder);
         EnsureFolder("Assets/Materials");
 
-        AnimationClip idleClip = CreateClip(AnimationFolder + "/Player_Idle.anim", new[] { walkSprites[0] }, 1f, true);
-        AnimationClip walkClip = CreateClip(AnimationFolder + "/Player_Walk.anim", walkSprites, 10f, true);
-        AnimationClip jumpClip = CreateClip(AnimationFolder + "/Player_Jump.anim", jumpSprites.Take(4).ToArray(), 8f, false);
-        AnimationClip fallClip = CreateClip(AnimationFolder + "/Player_Fall.anim", jumpSprites.Skip(4).ToArray(), 6f, false);
-        AnimatorController controller = CreateAnimatorController(idleClip, walkClip, jumpClip, fallClip);
         Material playerMaterial = CreatePlayerMaterial();
+        Material shootMaterial = CreateShootMaterial();
+        AnimationClip idleClip = CreateClip(AnimationFolder + "/Player_Idle.anim", new[] { walkSprites[0] }, 1f, true, playerMaterial);
+        AnimationClip walkClip = CreateClip(AnimationFolder + "/Player_Walk.anim", walkSprites, 10f, true, playerMaterial);
+        AnimationClip jumpClip = CreateClip(AnimationFolder + "/Player_Jump.anim", jumpSprites.Take(4).ToArray(), 8f, false, playerMaterial);
+        AnimationClip fallClip = CreateClip(AnimationFolder + "/Player_Fall.anim", jumpSprites.Skip(4).ToArray(), 6f, false, playerMaterial);
+        AnimationClip shootClip = CreateClip(AnimationFolder + "/Player_Shoot.anim", shootSprites, 12f, false, shootMaterial);
+        AnimatorController controller = CreateAnimatorController(idleClip, walkClip, jumpClip, fallClip, shootClip);
 
         int groundLayer = EnsureLayer("Ground");
         CreateGround(groundLayer);
-        CreatePlayer(walkSprites[0], controller, playerMaterial, groundLayer);
+        CreatePlayer(walkSprites[0], controller, playerMaterial, shootMaterial, groundLayer);
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();
         AssetDatabase.SaveAssets();
-        Debug.Log("Personaje jugable configurado: caminar, saltar, caer, girar y colisionar con el suelo.");
+        Debug.Log("Personaje jugable configurado: caminar, saltar, caer, disparar, girar y colisionar con el suelo.");
     }
 
     private static void BuildOnceWhenReady()
@@ -68,7 +74,8 @@ public static class PlayerSetupBuilder
             return;
 
         if (AssetDatabase.LoadAssetAtPath<Texture2D>(WalkSheetPath) == null ||
-            AssetDatabase.LoadAssetAtPath<Texture2D>(JumpSheetPath) == null)
+            AssetDatabase.LoadAssetAtPath<Texture2D>(JumpSheetPath) == null ||
+            AssetDatabase.LoadAssetAtPath<Texture2D>(ShootSheetPath) == null)
             return;
 
         GameObject player = GameObject.Find("Player");
@@ -77,7 +84,21 @@ public static class PlayerSetupBuilder
             ? AssetDatabase.GetAssetPath(renderer.sprite)
             : string.Empty;
 
-        if (!string.Equals(currentSpritePath, WalkSheetPath, StringComparison.Ordinal))
+        bool shootAnimationMissing = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+            AnimationFolder + "/Player_Shoot.anim") == null;
+        bool shootMaterialMissing = AssetDatabase.LoadAssetAtPath<Material>(ShootMaterialPath) == null;
+        PlayerController2D playerController = player != null ? player.GetComponent<PlayerController2D>() : null;
+        bool shootMaterialAssignmentMissing = true;
+        if (playerController != null)
+        {
+            var serializedController = new SerializedObject(playerController);
+            SerializedProperty shootMaterialProperty = serializedController.FindProperty("shootMaterial");
+            shootMaterialAssignmentMissing = shootMaterialProperty == null ||
+                shootMaterialProperty.objectReferenceValue == null;
+        }
+
+        if (!string.Equals(currentSpritePath, WalkSheetPath, StringComparison.Ordinal) ||
+            shootAnimationMissing || shootMaterialMissing || shootMaterialAssignmentMissing)
             BuildPlayer();
         else
             AlignExistingPlayer(player);
@@ -93,7 +114,7 @@ public static class PlayerSetupBuilder
         importer.spriteImportMode = SpriteImportMode.Multiple;
         importer.spritePixelsPerUnit = 300f;
         importer.mipmapEnabled = false;
-        importer.filterMode = FilterMode.Bilinear;
+        importer.filterMode = path == ShootSheetPath ? FilterMode.Point : FilterMode.Bilinear;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.maxTextureSize = 4096;
         importer.SaveAndReimport();
@@ -135,7 +156,7 @@ public static class PlayerSetupBuilder
             .ToArray();
     }
 
-    private static AnimationClip CreateClip(string path, Sprite[] sprites, float frameRate, bool loop)
+    private static AnimationClip CreateClip(string path, Sprite[] sprites, float frameRate, bool loop, Material material)
     {
         var generated = new AnimationClip { frameRate = frameRate };
         var binding = new EditorCurveBinding
@@ -154,6 +175,17 @@ public static class PlayerSetupBuilder
             };
         }
         AnimationUtility.SetObjectReferenceCurve(generated, binding, frames);
+
+        var materialBinding = new EditorCurveBinding
+        {
+            path = string.Empty,
+            type = typeof(SpriteRenderer),
+            propertyName = "m_Materials.Array.data[0]"
+        };
+        AnimationUtility.SetObjectReferenceCurve(generated, materialBinding, new[]
+        {
+            new ObjectReferenceKeyframe { time = 0f, value = material }
+        });
 
         var serializedClip = new SerializedObject(generated);
         serializedClip.FindProperty("m_AnimationClipSettings.m_LoopTime").boolValue = loop;
@@ -176,7 +208,8 @@ public static class PlayerSetupBuilder
         AnimationClip idleClip,
         AnimationClip walkClip,
         AnimationClip jumpClip,
-        AnimationClip fallClip)
+        AnimationClip fallClip,
+        AnimationClip shootClip)
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
         if (controller == null)
@@ -186,6 +219,7 @@ public static class PlayerSetupBuilder
         controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
         controller.AddParameter("VerticalSpeed", AnimatorControllerParameterType.Float);
         controller.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
+        controller.AddParameter("Shoot", AnimatorControllerParameterType.Trigger);
 
         AnimatorStateMachine machine = controller.layers[0].stateMachine;
         foreach (ChildAnimatorState child in machine.states)
@@ -197,14 +231,21 @@ public static class PlayerSetupBuilder
         AnimatorState walk = machine.AddState("Walk", new Vector3(450, 50));
         AnimatorState jump = machine.AddState("Jump", new Vector3(330, -90));
         AnimatorState fall = machine.AddState("Fall", new Vector3(560, -90));
+        AnimatorState shoot = machine.AddState("Shoot", new Vector3(335, 165));
         idle.motion = idleClip;
         walk.motion = walkClip;
         jump.motion = jumpClip;
         fall.motion = fallClip;
+        shoot.motion = shootClip;
         machine.defaultState = idle;
 
         AddTransition(idle, walk, AnimatorConditionMode.Greater, 0.1f, "Speed");
         AddTransition(walk, idle, AnimatorConditionMode.Less, 0.1f, "Speed");
+
+        AnimatorStateTransition toShoot = machine.AddAnyStateTransition(shoot);
+        ConfigureTransition(toShoot);
+        toShoot.canTransitionToSelf = false;
+        toShoot.AddCondition(AnimatorConditionMode.If, 0f, "Shoot");
 
         AnimatorStateTransition toJump = machine.AddAnyStateTransition(jump);
         ConfigureTransition(toJump);
@@ -222,6 +263,8 @@ public static class PlayerSetupBuilder
         AddGroundedTransition(jump, walk, true);
         AddGroundedTransition(fall, idle, false);
         AddGroundedTransition(fall, walk, true);
+        AddShootExitTransition(shoot, idle, false);
+        AddShootExitTransition(shoot, walk, true);
 
         EditorUtility.SetDirty(controller);
         return controller;
@@ -239,6 +282,18 @@ public static class PlayerSetupBuilder
     {
         AnimatorStateTransition transition = source.AddTransition(destination);
         ConfigureTransition(transition);
+        transition.AddCondition(AnimatorConditionMode.If, 0f, "IsGrounded");
+        transition.AddCondition(moving ? AnimatorConditionMode.Greater : AnimatorConditionMode.Less,
+            0.1f, "Speed");
+    }
+
+    private static void AddShootExitTransition(AnimatorState source, AnimatorState destination, bool moving)
+    {
+        AnimatorStateTransition transition = source.AddTransition(destination);
+        transition.hasExitTime = true;
+        transition.exitTime = 0.95f;
+        transition.hasFixedDuration = true;
+        transition.duration = 0.04f;
         transition.AddCondition(AnimatorConditionMode.If, 0f, "IsGrounded");
         transition.AddCondition(moving ? AnimatorConditionMode.Greater : AnimatorConditionMode.Less,
             0.1f, "Speed");
@@ -273,6 +328,29 @@ public static class PlayerSetupBuilder
         return material;
     }
 
+    private static Material CreateShootMaterial()
+    {
+        Material material = AssetDatabase.LoadAssetAtPath<Material>(ShootMaterialPath);
+        Shader shader = Shader.Find("ZombieGame/CheckerboardKey");
+        if (shader == null)
+            throw new InvalidOperationException("No se encontro el shader para limpiar el fondo del disparo.");
+
+        if (material == null)
+        {
+            material = new Material(shader) { name = "PlayerShootMaterial" };
+            AssetDatabase.CreateAsset(material, ShootMaterialPath);
+        }
+        else
+        {
+            material.shader = shader;
+            material.name = "PlayerShootMaterial";
+        }
+
+        material.SetFloat("_Cutoff", 0.55f);
+        EditorUtility.SetDirty(material);
+        return material;
+    }
+
     private static void CreateGround(int groundLayer)
     {
         GameObject ground = GameObject.Find("GroundCollider");
@@ -288,7 +366,7 @@ public static class PlayerSetupBuilder
     }
 
     private static void CreatePlayer(Sprite idleSprite, AnimatorController controller,
-        Material material, int groundLayer)
+        Material material, Material shootMaterial, int groundLayer)
     {
         GameObject player = GameObject.Find("Player");
         if (player == null)
@@ -329,6 +407,7 @@ public static class PlayerSetupBuilder
         var controllerComponent = player.GetComponent<PlayerController2D>();
         var serializedController = new SerializedObject(controllerComponent);
         serializedController.FindProperty("groundMask").intValue = 1 << groundLayer;
+        serializedController.FindProperty("shootMaterial").objectReferenceValue = shootMaterial;
         serializedController.ApplyModifiedPropertiesWithoutUndo();
 
         Selection.activeGameObject = player;

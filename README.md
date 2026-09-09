@@ -15,6 +15,7 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Automovil destruido y barrera de concreto utilizables como plataformas.
 - Plataformas atravesables con S o flecha abajo.
 - Musica de fondo automatica y en bucle.
+- Animacion del personaje disparando quieto con una pistola.
 
 ## Controles
 
@@ -23,6 +24,7 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Espacio: saltar.
 - Soltar Espacio anticipadamente: salto corto.
 - S o flecha abajo: bajar a traves de una plataforma.
+- F o Ctrl izquierdo: reproducir la animacion de disparo estando quieto.
 
 ## Documentacion
 

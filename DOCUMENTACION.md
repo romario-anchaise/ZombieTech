@@ -63,6 +63,7 @@ Actualmente están implementados los dos primeros pasos. Los demás forman parte
 | Saltar | Barra espaciadora |
 | Realizar un salto corto | Soltar la barra espaciadora antes de alcanzar la altura máxima |
 | Bajar a través de una plataforma | `S` o flecha abajo |
+| Disparar estando quieto | `F` o `Ctrl` izquierdo |
 
 ## 6. Funcionalidades implementadas
 
@@ -88,14 +89,15 @@ El tiempo de gracia permite saltar durante un instante después de abandonar una
 
 ### 6.2. Animaciones
 
-El controlador de animaciones contiene cuatro estados:
+El controlador de animaciones contiene cinco estados:
 
 - `Idle`: personaje en reposo.
 - `Walk`: personaje caminando.
 - `Jump`: movimiento ascendente.
 - `Fall`: movimiento descendente.
+- `Shoot`: secuencia de seis frames al disparar una pistola estando quieto.
 
-Las transiciones utilizan los parámetros `Speed`, `VerticalSpeed` e `IsGrounded`. El sprite se invierte horizontalmente para permitir movimiento hacia ambos lados sin duplicar todas las imágenes.
+Las transiciones utilizan los parámetros `Speed`, `VerticalSpeed`, `IsGrounded` y el disparador `Shoot`. El sprite se invierte horizontalmente para permitir movimiento hacia ambos lados sin duplicar todas las imágenes.
 
 ### 6.3. Colisiones y plataformas
 
@@ -122,6 +124,12 @@ La canción `BecomeTheAssassin.mp3` se carga desde `Resources/Audio` al iniciar 
 
 La escena principal utiliza un fondo urbano posapocalíptico ajustado a la altura de la cámara ortográfica. El fondo se renderiza detrás del personaje y de los demás objetos mediante su orden de dibujo.
 
+### 6.6. Disparo animado
+
+La acción de disparo se activa con `F` o `Ctrl` izquierdo únicamente cuando el personaje está en el suelo y permanece quieto. El Animator recibe el parámetro tipo `Trigger` llamado `Shoot` y reproduce `Player_Shoot.anim`, una secuencia no repetitiva de seis fotogramas a 12 FPS.
+
+La hoja original de disparo tenía un tablero blanco y gris incrustado en la propia imagen. Por eso se creó `PlayerShootCheckerboardKey.mat`, basado en `CheckerboardKeySprite.shader`. El controlador aplica ese material durante 0.5 segundos y luego restaura el material normal. La textura también se importa con filtro `Point`, sin mipmaps y sin compresión para impedir que Unity mezcle el fondo con los bordes del personaje.
+
 ## 7. Arquitectura del proyecto
 
 ```text
@@ -129,13 +137,14 @@ Assets/
 ├── Animations/Player/       Animaciones y Animator Controller
 ├── Art/
 │   ├── Backgrounds/         Fondo de la ciudad
-│   └── Characters/          Sprites del superviviente
+│   └── Characters/          Hojas de sprites del superviviente
 ├── Editor/                  Herramientas de configuración automática
-├── Materials/               Material utilizado por el personaje
+├── Materials/               Material normal y material especial de disparo
 ├── Resources/Audio/         Música cargada durante la ejecución
 ├── Scenes/                  Escena principal
 ├── Scripts/                 Código ejecutado por el juego
-└── Settings/                Configuración de URP 2D e Input System
+├── Settings/                Configuración de URP 2D e Input System
+└── Shaders/                 Filtro visual para la hoja de disparo
 ```
 
 ## 8. Scripts principales
@@ -147,6 +156,7 @@ Assets/
 | `PlayerSetupBuilder.cs` | Configura sprites, animaciones, físicas, capa de suelo y componentes del jugador desde el editor. |
 | `ZombieBackgroundInstaller.cs` | Importa, escala y coloca el fondo en la escena. |
 | `EnvironmentPlatformInstaller.cs` | Crea y alinea las superficies saltables con los elementos dibujados en el escenario. |
+| `CheckerboardKeySprite.shader` | Descarta los tonos del tablero que venían incrustados en la hoja de disparo. |
 
 Los scripts de la carpeta `Editor` solo se ejecutan dentro del editor de Unity. Los scripts de la carpeta `Scripts` forman parte del juego final.
 
@@ -250,3 +260,157 @@ git push
 
 El prototipo permite recorrer la escena, saltar, reproducir las animaciones correspondientes, interactuar con superficies del escenario y escuchar música de fondo. Esto constituye la base jugable sobre la cual se incorporarán enemigos, objetivos, interfaz y progresión.
 
+## 18. Procedimiento realizado en Unity
+
+### 18.1. Integración de la música
+
+1. Se copió `BecomeTheAssassin.mp3` a `Assets/Resources/Audio/`.
+2. Se creó `Assets/Scripts/BackgroundMusic.cs`.
+3. Se añadió el atributo `RuntimeInitializeOnLoadMethod` para iniciar el sistema antes de cargar la escena.
+4. El script busca el audio con `Resources.Load<AudioClip>("Audio/BecomeTheAssassin")`.
+5. Durante **Play** se crea el objeto `Background Music` con un componente `AudioSource`.
+6. Se activó `loop`, se configuró el volumen en `0.3` y se estableció `spatialBlend = 0` para reproducirlo como audio 2D.
+7. Se utilizó `DontDestroyOnLoad` para conservar la música al cambiar de escena.
+
+Para comprobarlo en Unity: presionar **Play**, seleccionar `Background Music` en **Hierarchy** y revisar `Audio Source` en **Inspector**.
+
+### 18.2. Preparación de las hojas de fotogramas
+
+Las imágenes se guardaron en `Assets/Art/Characters/Survivor/Processed/`:
+
+| Hoja | División | Uso |
+|---|---:|---|
+| `Survivor_Walk.png` | 8 sprites | Reposo y caminata |
+| `Survivor_JumpFall.png` | 6 sprites | Cuatro frames de subida y dos de caída |
+| `Survivor_Shoot.png` | 6 sprites | Secuencia completa del disparo |
+
+La herramienta `PlayerSetupBuilder.cs` configura automáticamente cada textura como **Sprite (2D and UI)** y **Sprite Mode: Multiple**. Divide horizontalmente la imagen, asigna un pivote personalizado en `(0.5, 0.18)` para alinear los pies y utiliza `300 Pixels Per Unit`.
+
+Los clips generados tienen esta velocidad:
+
+| Clip | FPS | Loop |
+|---|---:|---|
+| `Player_Idle.anim` | 1 | Sí |
+| `Player_Walk.anim` | 10 | Sí |
+| `Player_Jump.anim` | 8 | No |
+| `Player_Fall.anim` | 6 | No |
+| `Player_Shoot.anim` | 12 | No |
+
+Para ver los fotogramas manualmente: seleccionar una hoja en **Project**, abrir **Inspector**, desplegar la flecha del archivo o pulsar **Sprite Editor**. Para revisar los clips: abrir `Assets/Animations/Player/` y seleccionar cada archivo `.anim`.
+
+### 18.3. Creación del Animator
+
+El archivo `Assets/Animations/Player/PlayerAnimator.controller` contiene los estados `Idle`, `Walk`, `Jump`, `Fall` y `Shoot`. Sus parámetros son:
+
+| Parámetro | Tipo | Función |
+|---|---|---|
+| `Speed` | Float | Cambia entre reposo y caminata |
+| `VerticalSpeed` | Float | Distingue subida y caída |
+| `IsGrounded` | Bool | Indica si el personaje está en el suelo |
+| `Shoot` | Trigger | Inicia una sola secuencia de disparo |
+
+Para verlo en Unity: seleccionar `PlayerAnimator.controller` y abrir **Window > Animation > Animator**.
+
+### 18.4. Configuración física del personaje
+
+En `Hierarchy > Player > Inspector` se agregaron `Sprite Renderer`, `Rigidbody 2D`, `Capsule Collider 2D`, `Animator` y `Player Controller 2D`. El `Rigidbody2D` mueve al personaje mediante velocidad, sin modificar directamente el `Transform`. El `CapsuleCollider2D` representa su cuerpo y la capa `Ground` identifica las superficies válidas.
+
+El suelo usa `BoxCollider2D`. El automóvil y la barrera usan `BoxCollider2D` junto con `PlatformEffector2D`; por eso se puede aterrizar desde arriba, atravesarlos desde abajo y salir por sus costados sin encontrar una pared invisible.
+
+## 19. Código utilizado
+
+### 19.1. Reproducción de música
+
+Fragmento principal de `BackgroundMusic.cs`:
+
+```csharp
+AudioClip musicClip = Resources.Load<AudioClip>("Audio/BecomeTheAssassin");
+GameObject musicObject = new GameObject("Background Music");
+Object.DontDestroyOnLoad(musicObject);
+
+AudioSource audioSource = musicObject.AddComponent<AudioSource>();
+audioSource.clip = musicClip;
+audioSource.loop = true;
+audioSource.volume = 0.3f;
+audioSource.spatialBlend = 0f;
+audioSource.Play();
+```
+
+### 19.2. Movimiento horizontal con físicas
+
+Fragmento de `PlayerController2D.cs` ejecutado en `FixedUpdate`:
+
+```csharp
+float targetSpeed = horizontalInput * moveSpeed;
+float changeRate = Mathf.Abs(targetSpeed) > 0.01f
+    ? acceleration
+    : deceleration;
+
+float nextSpeed = Mathf.MoveTowards(
+    body.linearVelocityX,
+    targetSpeed,
+    changeRate * Time.fixedDeltaTime);
+
+body.linearVelocity = new Vector2(nextSpeed, body.linearVelocityY);
+```
+
+### 19.3. Salto y salto corto
+
+```csharp
+if (jumpBufferCounter > 0f && coyoteCounter > 0f)
+{
+    body.linearVelocity = new Vector2(body.linearVelocityX, jumpForce);
+    jumpBufferCounter = 0f;
+    coyoteCounter = 0f;
+}
+
+if (!jumpHeld && body.linearVelocityY > 0f)
+    body.linearVelocity = new Vector2(
+        body.linearVelocityX,
+        body.linearVelocityY * shortJumpMultiplier);
+```
+
+### 19.4. Activación del disparo
+
+```csharp
+bool shootPressed = keyboard.fKey.wasPressedThisFrame ||
+                    keyboard.leftCtrlKey.wasPressedThisFrame;
+
+if (shootPressed && isGrounded &&
+    Mathf.Abs(horizontalInput) < 0.01f)
+{
+    animator.SetTrigger("Shoot");
+    StartCoroutine(UseShootMaterialTemporarily());
+}
+```
+
+La corrutina coloca el material especial durante `0.5` segundos y luego devuelve el material normal. En este avance el disparo es una animación visual; todavía no crea una bala ni aplica daño.
+
+### 19.5. Actualización del Animator
+
+```csharp
+animator.SetFloat("Speed", Mathf.Abs(horizontalInput));
+animator.SetFloat("VerticalSpeed", body.linearVelocityY);
+animator.SetBool("IsGrounded", isGrounded);
+```
+
+### 19.6. Herramientas de Editor
+
+`PlayerSetupBuilder.cs`, `ZombieBackgroundInstaller.cs` y `EnvironmentPlatformInstaller.cs` usan la API `UnityEditor`. Automatizan la importación de sprites, creación de clips, estados del Animator, materiales, capas, colliders y objetos de escena. Estos scripts aparecen dentro de `Assets/Editor`, por lo que solo funcionan en el Editor y no se incluyen como lógica del ejecutable.
+
+## 20. Relación con la rúbrica del Hito 1
+
+| Criterio | Evidencia actual | Estado |
+|---|---|---|
+| Programación C# e interactividad | Campos privados con `[SerializeField]`, nombres consistentes, `Update` para entrada y `FixedUpdate` para física | Implementado |
+| Físicas 2D y Game Feel | `Rigidbody2D`, aceleración, desaceleración, salto variable, coyote time y jump buffer | Implementado |
+| Colisiones, Tags y Layers | Capa `Ground`, `CapsuleCollider2D`, `BoxCollider2D` y `PlatformEffector2D` | Implementado |
+| Gestión de assets | Carpetas separadas para arte, audio, animaciones, materiales, escenas y scripts | Implementado |
+| Git | Repositorio público, `.gitignore` de Unity y commits descriptivos | Implementado |
+| Personaje con movimiento y acción | Movimiento, salto, descenso por plataformas y animación de disparo | Implementado |
+| Mecánica de interacción | Plataformas atravesables; el combate real aún no aplica daño | Parcial |
+| Prefabs repetitivos | Todavía no existe un prefab reutilizable | Pendiente |
+| Inicio y reinicio | La escena inicia con **Play**, pero aún no existe botón o condición de reinicio | Pendiente |
+| Video de demostración | Debe grabarse un video de máximo dos minutos mostrando gameplay y explicando una parte del código | Pendiente |
+
+Para aspirar a la calificación máxima, los siguientes pasos prioritarios son crear un prefab reutilizable, implementar una interacción clara (por ejemplo, bala que impacta a un zombi o un objeto coleccionable), agregar reinicio y comprobar que la consola esté libre de errores durante la demostración.

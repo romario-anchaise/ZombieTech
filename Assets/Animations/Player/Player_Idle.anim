@@ -27,6 +27,15 @@ AnimationClip:
     classID: 212
     script: {fileID: 0}
     flags: 2
+  - serializedVersion: 2
+    curve:
+    - time: 0
+      value: {fileID: 2100000, guid: 26ce4df75ea4d8246b7fddd271e8cd9d, type: 2}
+    attribute: 'm_Materials.Array.data[0]'
+    path: 
+    classID: 212
+    script: {fileID: 0}
+    flags: 2
   m_SampleRate: 1
   m_WrapMode: 0
   m_Bounds:
