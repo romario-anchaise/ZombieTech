@@ -89,15 +89,16 @@ El tiempo de gracia permite saltar durante un instante después de abandonar una
 
 ### 6.2. Animaciones
 
-El controlador de animaciones contiene cinco estados:
+El controlador de animaciones contiene seis estados:
 
 - `Idle`: personaje en reposo.
 - `Walk`: personaje caminando.
 - `Jump`: movimiento ascendente.
 - `Fall`: movimiento descendente.
 - `Shoot`: secuencia de seis frames al disparar una pistola estando quieto.
+- `Death`: secuencia de seis frames que termina con el personaje inmóvil.
 
-Las transiciones utilizan los parámetros `Speed`, `VerticalSpeed`, `IsGrounded` y el disparador `Shoot`. El sprite se invierte horizontalmente para permitir movimiento hacia ambos lados sin duplicar todas las imágenes.
+Las transiciones utilizan los parámetros `Speed`, `VerticalSpeed`, `IsGrounded` y los disparadores `Shoot` y `Die`. El sprite se invierte horizontalmente para permitir movimiento hacia ambos lados sin duplicar todas las imágenes.
 
 ### 6.3. Colisiones y plataformas
 
@@ -130,16 +131,26 @@ La acción de disparo se activa con `F` o `Ctrl` izquierdo únicamente cuando el
 
 La hoja original de disparo tenía un tablero blanco y gris incrustado en la propia imagen. Por eso se creó `PlayerShootCheckerboardKey.mat`, basado en `CheckerboardKeySprite.shader`. El controlador aplica ese material durante 0.5 segundos y luego restaura el material normal. La textura también se importa con filtro `Point`, sin mipmaps y sin compresión para impedir que Unity mezcle el fondo con los bordes del personaje.
 
+### 6.7. Primer enemigo
+
+El nivel contiene un solo zombi obrero cabezón situado en el lado derecho. Utiliza ocho fotogramas de caminata, seis de ataque, `Rigidbody2D`, `CapsuleCollider2D`, `Animator` y el script `ZombiePatrol.cs`. Mientras exista el objeto `Player`, el enemigo lo persigue por todo el escenario y comienza el ataque al quedar a 0.9 unidades. El golpe se aplica después de 0.32 segundos para que la acción coincida con el frame de contacto.
+
+Cuando recibe el ataque, `PlayerController2D.Die()` detiene el desplazamiento, bloquea nuevas entradas y activa `Die` en el Animator. `Player_Death.anim` reproduce seis fotogramas y permanece en la pose final porque el estado `Death` no tiene transición de salida.
+
+El enemigo se guardó como `Assets/Prefabs/WorkerZombie.prefab` y la escena contiene exactamente una instancia dentro del objeto organizador `Enemies`. Esto demuestra el uso de Prefabs solicitado por la rúbrica sin llenar el escenario de copias.
+
 ## 7. Arquitectura del proyecto
 
 ```text
 Assets/
 ├── Animations/Player/       Animaciones y Animator Controller
+├── Animations/Zombie/       Caminata y controlador del enemigo
 ├── Art/
 │   ├── Backgrounds/         Fondo de la ciudad
 │   └── Characters/          Hojas de sprites del superviviente
 ├── Editor/                  Herramientas de configuración automática
 ├── Materials/               Material normal y material especial de disparo
+├── Prefabs/                 Prefab reutilizable del zombi
 ├── Resources/Audio/         Música cargada durante la ejecución
 ├── Scenes/                  Escena principal
 ├── Scripts/                 Código ejecutado por el juego
@@ -157,6 +168,8 @@ Assets/
 | `ZombieBackgroundInstaller.cs` | Importa, escala y coloca el fondo en la escena. |
 | `EnvironmentPlatformInstaller.cs` | Crea y alinea las superficies saltables con los elementos dibujados en el escenario. |
 | `CheckerboardKeySprite.shader` | Descarta los tonos del tablero que venían incrustados en la hoja de disparo. |
+| `ZombiePatrol.cs` | Mueve al zombi automáticamente dentro de su zona de patrullaje y actualiza su orientación. |
+| `ZombieSetupBuilder.cs` | Importa la hoja del enemigo, crea su animación, material, Animator, prefab y única instancia. |
 
 Los scripts de la carpeta `Editor` solo se ejecutan dentro del editor de Unity. Los scripts de la carpeta `Scripts` forman parte del juego final.
 
@@ -172,6 +185,8 @@ SampleScene
 │       ├── Wrecked Car
 │       └── Concrete Barrier
 ├── GroundCollider
+├── Enemies
+│   └── Worker Zombie
 └── Player
 ```
 
@@ -214,8 +229,8 @@ Si Unity informa que la escena cambió en el disco, se debe seleccionar **Reload
 
 ## 13. Limitaciones actuales
 
-- Todavía no existen zombis controlados por inteligencia artificial.
-- No se ha implementado combate, daño ni sistema de vidas.
+- El zombi persigue y mata al jugador, pero todavía no existe un sistema gradual de vidas o puntos de salud.
+- El disparo del jugador sigue siendo visual y aún no daña al zombi.
 - No existen objetos coleccionables ni inventario.
 - La cámara todavía no sigue al jugador durante un nivel extenso.
 - Solo existe una escena jugable.
@@ -224,9 +239,9 @@ Si Unity informa que la escena cambió en el disco, se debe seleccionar **Reload
 
 ## 14. Próximas mejoras recomendadas
 
-1. Importar y configurar sprites animados de zombis.
-2. Crear patrullaje, persecución y ataque para los enemigos.
-3. Implementar salud, daño, muerte y reinicio del jugador.
+1. Crear proyectiles para que el disparo pueda dañar al zombi.
+2. Implementar puntos de salud, daño gradual y muerte del enemigo.
+3. Agregar una opción para reiniciar después de morir.
 4. Añadir botiquines, baterías y otros objetos coleccionables.
 5. Incorporar una cámara que siga al personaje y límites de nivel.
 6. Crear interfaz con vida, cantidad de objetos y objetivo actual.
@@ -283,6 +298,7 @@ Las imágenes se guardaron en `Assets/Art/Characters/Survivor/Processed/`:
 | `Survivor_Walk.png` | 8 sprites | Reposo y caminata |
 | `Survivor_JumpFall.png` | 6 sprites | Cuatro frames de subida y dos de caída |
 | `Survivor_Shoot.png` | 6 sprites | Secuencia completa del disparo |
+| `Survivor_Death.png` | 6 sprites | Reacción al ataque y muerte |
 
 La herramienta `PlayerSetupBuilder.cs` configura automáticamente cada textura como **Sprite (2D and UI)** y **Sprite Mode: Multiple**. Divide horizontalmente la imagen, asigna un pivote personalizado en `(0.5, 0.18)` para alinear los pies y utiliza `300 Pixels Per Unit`.
 
@@ -295,12 +311,13 @@ Los clips generados tienen esta velocidad:
 | `Player_Jump.anim` | 8 | No |
 | `Player_Fall.anim` | 6 | No |
 | `Player_Shoot.anim` | 12 | No |
+| `Player_Death.anim` | 8 | No |
 
 Para ver los fotogramas manualmente: seleccionar una hoja en **Project**, abrir **Inspector**, desplegar la flecha del archivo o pulsar **Sprite Editor**. Para revisar los clips: abrir `Assets/Animations/Player/` y seleccionar cada archivo `.anim`.
 
 ### 18.3. Creación del Animator
 
-El archivo `Assets/Animations/Player/PlayerAnimator.controller` contiene los estados `Idle`, `Walk`, `Jump`, `Fall` y `Shoot`. Sus parámetros son:
+El archivo `Assets/Animations/Player/PlayerAnimator.controller` contiene los estados `Idle`, `Walk`, `Jump`, `Fall`, `Shoot` y `Death`. Sus parámetros son:
 
 | Parámetro | Tipo | Función |
 |---|---|---|
@@ -308,6 +325,7 @@ El archivo `Assets/Animations/Player/PlayerAnimator.controller` contiene los est
 | `VerticalSpeed` | Float | Distingue subida y caída |
 | `IsGrounded` | Bool | Indica si el personaje está en el suelo |
 | `Shoot` | Trigger | Inicia una sola secuencia de disparo |
+| `Die` | Trigger | Activa la muerte y deja la pose final |
 
 Para verlo en Unity: seleccionar `PlayerAnimator.controller` y abrir **Window > Animation > Animator**.
 
@@ -408,9 +426,9 @@ animator.SetBool("IsGrounded", isGrounded);
 | Gestión de assets | Carpetas separadas para arte, audio, animaciones, materiales, escenas y scripts | Implementado |
 | Git | Repositorio público, `.gitignore` de Unity y commits descriptivos | Implementado |
 | Personaje con movimiento y acción | Movimiento, salto, descenso por plataformas y animación de disparo | Implementado |
-| Mecánica de interacción | Plataformas atravesables; el combate real aún no aplica daño | Parcial |
-| Prefabs repetitivos | Todavía no existe un prefab reutilizable | Pendiente |
+| Mecánica de interacción | El zombi persigue, ataca y provoca la muerte animada del jugador | Implementado |
+| Prefabs repetitivos | `WorkerZombie.prefab` permite crear enemigos reutilizables; la escena usa una instancia | Implementado |
 | Inicio y reinicio | La escena inicia con **Play**, pero aún no existe botón o condición de reinicio | Pendiente |
 | Video de demostración | Debe grabarse un video de máximo dos minutos mostrando gameplay y explicando una parte del código | Pendiente |
 
-Para aspirar a la calificación máxima, los siguientes pasos prioritarios son crear un prefab reutilizable, implementar una interacción clara (por ejemplo, bala que impacta a un zombi o un objeto coleccionable), agregar reinicio y comprobar que la consola esté libre de errores durante la demostración.
+Para aspirar a la calificación máxima, los siguientes pasos prioritarios son implementar una interacción clara (por ejemplo, una bala que impacta al zombi o un objeto coleccionable), agregar reinicio y comprobar que la consola esté libre de errores durante la demostración.

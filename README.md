@@ -8,7 +8,7 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Personaje controlable con Rigidbody2D.
 - Movimiento horizontal con aceleracion y desaceleracion.
 - Salto variable, tiempo de gracia y buffer de entrada.
-- Animaciones de reposo, caminar, saltar y caer.
+- Animaciones de reposo, caminar, saltar, caer, disparar y morir.
 - Giro automatico del personaje hacia ambos lados.
 - Colisiones mediante la capa Ground.
 - Suelo invisible alineado con el escenario.
@@ -16,6 +16,8 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Plataformas atravesables con S o flecha abajo.
 - Musica de fondo automatica y en bucle.
 - Animacion del personaje disparando quieto con una pistola.
+- Un zombie obrero cabezon, creado como prefab, que persigue y ataca al jugador.
+- Animacion de ataque sincronizada con la muerte del personaje.
 
 ## Controles
 

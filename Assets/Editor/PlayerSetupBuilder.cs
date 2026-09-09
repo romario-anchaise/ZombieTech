@@ -12,6 +12,7 @@ public static class PlayerSetupBuilder
     private const string WalkSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_Walk.png";
     private const string JumpSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_JumpFall.png";
     private const string ShootSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_Shoot.png";
+    private const string DeathSheetPath = "Assets/Art/Characters/Survivor/Processed/Survivor_Death.png";
     private const string AnimationFolder = "Assets/Animations/Player";
     private const string MaterialPath = "Assets/Materials/PlayerCheckerboardKey.mat";
     private const string ShootMaterialPath = "Assets/Materials/PlayerShootCheckerboardKey.mat";
@@ -35,11 +36,14 @@ public static class PlayerSetupBuilder
         ConfigureSpriteSheet(WalkSheetPath, 8, "Walk");
         ConfigureSpriteSheet(JumpSheetPath, 6, "JumpFall");
         ConfigureSpriteSheet(ShootSheetPath, 6, "Shoot");
+        ConfigureSpriteSheet(DeathSheetPath, 6, "Death");
 
         Sprite[] walkSprites = LoadSprites(WalkSheetPath);
         Sprite[] jumpSprites = LoadSprites(JumpSheetPath);
         Sprite[] shootSprites = LoadSprites(ShootSheetPath);
-        if (walkSprites.Length != 8 || jumpSprites.Length != 6 || shootSprites.Length != 6)
+        Sprite[] deathSprites = LoadSprites(DeathSheetPath);
+        if (walkSprites.Length != 8 || jumpSprites.Length != 6 ||
+            shootSprites.Length != 6 || deathSprites.Length != 6)
         {
             Debug.LogError("No se pudo configurar el jugador: una hoja de sprites no contiene la cantidad esperada.");
             return;
@@ -56,7 +60,9 @@ public static class PlayerSetupBuilder
         AnimationClip jumpClip = CreateClip(AnimationFolder + "/Player_Jump.anim", jumpSprites.Take(4).ToArray(), 8f, false, playerMaterial);
         AnimationClip fallClip = CreateClip(AnimationFolder + "/Player_Fall.anim", jumpSprites.Skip(4).ToArray(), 6f, false, playerMaterial);
         AnimationClip shootClip = CreateClip(AnimationFolder + "/Player_Shoot.anim", shootSprites, 12f, false, shootMaterial);
-        AnimatorController controller = CreateAnimatorController(idleClip, walkClip, jumpClip, fallClip, shootClip);
+        AnimationClip deathClip = CreateClip(AnimationFolder + "/Player_Death.anim", deathSprites, 8f, false, shootMaterial);
+        AnimatorController controller = CreateAnimatorController(
+            idleClip, walkClip, jumpClip, fallClip, shootClip, deathClip);
 
         int groundLayer = EnsureLayer("Ground");
         CreateGround(groundLayer);
@@ -75,7 +81,8 @@ public static class PlayerSetupBuilder
 
         if (AssetDatabase.LoadAssetAtPath<Texture2D>(WalkSheetPath) == null ||
             AssetDatabase.LoadAssetAtPath<Texture2D>(JumpSheetPath) == null ||
-            AssetDatabase.LoadAssetAtPath<Texture2D>(ShootSheetPath) == null)
+            AssetDatabase.LoadAssetAtPath<Texture2D>(ShootSheetPath) == null ||
+            AssetDatabase.LoadAssetAtPath<Texture2D>(DeathSheetPath) == null)
             return;
 
         GameObject player = GameObject.Find("Player");
@@ -86,6 +93,8 @@ public static class PlayerSetupBuilder
 
         bool shootAnimationMissing = AssetDatabase.LoadAssetAtPath<AnimationClip>(
             AnimationFolder + "/Player_Shoot.anim") == null;
+        bool deathAnimationMissing = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+            AnimationFolder + "/Player_Death.anim") == null;
         bool shootMaterialMissing = AssetDatabase.LoadAssetAtPath<Material>(ShootMaterialPath) == null;
         PlayerController2D playerController = player != null ? player.GetComponent<PlayerController2D>() : null;
         bool shootMaterialAssignmentMissing = true;
@@ -98,7 +107,8 @@ public static class PlayerSetupBuilder
         }
 
         if (!string.Equals(currentSpritePath, WalkSheetPath, StringComparison.Ordinal) ||
-            shootAnimationMissing || shootMaterialMissing || shootMaterialAssignmentMissing)
+            shootAnimationMissing || deathAnimationMissing || shootMaterialMissing ||
+            shootMaterialAssignmentMissing)
             BuildPlayer();
         else
             AlignExistingPlayer(player);
@@ -114,7 +124,9 @@ public static class PlayerSetupBuilder
         importer.spriteImportMode = SpriteImportMode.Multiple;
         importer.spritePixelsPerUnit = 300f;
         importer.mipmapEnabled = false;
-        importer.filterMode = path == ShootSheetPath ? FilterMode.Point : FilterMode.Bilinear;
+        importer.filterMode = path == ShootSheetPath || path == DeathSheetPath
+            ? FilterMode.Point
+            : FilterMode.Bilinear;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.maxTextureSize = 4096;
         importer.SaveAndReimport();
@@ -209,7 +221,8 @@ public static class PlayerSetupBuilder
         AnimationClip walkClip,
         AnimationClip jumpClip,
         AnimationClip fallClip,
-        AnimationClip shootClip)
+        AnimationClip shootClip,
+        AnimationClip deathClip)
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
         if (controller == null)
@@ -220,6 +233,7 @@ public static class PlayerSetupBuilder
         controller.AddParameter("VerticalSpeed", AnimatorControllerParameterType.Float);
         controller.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
         controller.AddParameter("Shoot", AnimatorControllerParameterType.Trigger);
+        controller.AddParameter("Die", AnimatorControllerParameterType.Trigger);
 
         AnimatorStateMachine machine = controller.layers[0].stateMachine;
         foreach (ChildAnimatorState child in machine.states)
@@ -232,11 +246,13 @@ public static class PlayerSetupBuilder
         AnimatorState jump = machine.AddState("Jump", new Vector3(330, -90));
         AnimatorState fall = machine.AddState("Fall", new Vector3(560, -90));
         AnimatorState shoot = machine.AddState("Shoot", new Vector3(335, 165));
+        AnimatorState death = machine.AddState("Death", new Vector3(560, 165));
         idle.motion = idleClip;
         walk.motion = walkClip;
         jump.motion = jumpClip;
         fall.motion = fallClip;
         shoot.motion = shootClip;
+        death.motion = deathClip;
         machine.defaultState = idle;
 
         AddTransition(idle, walk, AnimatorConditionMode.Greater, 0.1f, "Speed");
@@ -246,6 +262,11 @@ public static class PlayerSetupBuilder
         ConfigureTransition(toShoot);
         toShoot.canTransitionToSelf = false;
         toShoot.AddCondition(AnimatorConditionMode.If, 0f, "Shoot");
+
+        AnimatorStateTransition toDeath = machine.AddAnyStateTransition(death);
+        ConfigureTransition(toDeath);
+        toDeath.canTransitionToSelf = false;
+        toDeath.AddCondition(AnimatorConditionMode.If, 0f, "Die");
 
         AnimatorStateTransition toJump = machine.AddAnyStateTransition(jump);
         ConfigureTransition(toJump);

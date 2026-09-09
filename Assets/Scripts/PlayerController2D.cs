@@ -35,6 +35,7 @@ public sealed class PlayerController2D : MonoBehaviour
     private bool jumpHeld;
     private bool isGrounded;
     private bool isDroppingThroughPlatform;
+    private bool isDead;
     private Material defaultMaterial;
     private Coroutine shootMaterialRoutine;
 
@@ -42,6 +43,7 @@ public sealed class PlayerController2D : MonoBehaviour
     private static readonly int VerticalSpeedHash = Animator.StringToHash("VerticalSpeed");
     private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
     private static readonly int ShootHash = Animator.StringToHash("Shoot");
+    private static readonly int DieHash = Animator.StringToHash("Die");
 
     private void Awake()
     {
@@ -54,6 +56,9 @@ public sealed class PlayerController2D : MonoBehaviour
 
     private void Update()
     {
+        if (isDead)
+            return;
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null)
             return;
@@ -91,6 +96,12 @@ public sealed class PlayerController2D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (isDead)
+        {
+            body.linearVelocity = new Vector2(0f, body.linearVelocityY);
+            return;
+        }
+
         isGrounded = CheckGrounded();
         coyoteCounter = isGrounded ? coyoteTime : coyoteCounter - Time.fixedDeltaTime;
 
@@ -164,6 +175,34 @@ public sealed class PlayerController2D : MonoBehaviour
             spriteRenderer.sharedMaterial = defaultMaterial;
 
         shootMaterialRoutine = null;
+    }
+
+    public void Die()
+    {
+        if (isDead)
+            return;
+
+        isDead = true;
+        horizontalInput = 0f;
+        body.linearVelocity = new Vector2(0f, body.linearVelocityY);
+
+        if (shootMaterialRoutine != null)
+        {
+            StopCoroutine(shootMaterialRoutine);
+            shootMaterialRoutine = null;
+        }
+
+        if (shootMaterial != null)
+            spriteRenderer.sharedMaterial = shootMaterial;
+
+        if (animator != null)
+        {
+            animator.ResetTrigger(ShootHash);
+            animator.SetFloat(SpeedHash, 0f);
+            animator.SetFloat(VerticalSpeedHash, 0f);
+            animator.SetBool(GroundedHash, true);
+            animator.SetTrigger(DieHash);
+        }
     }
 
     private void UpdateAnimator()

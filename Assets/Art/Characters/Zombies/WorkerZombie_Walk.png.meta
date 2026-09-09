@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: c799ff4e7b0db20408e70cc136bffe83
+guid: bc4f6c513496bd242a2d3c8f31afe297
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7263455119872054733
-    second: Survivor_Shoot_0
+      213: -5773166923570891214
+    second: WorkerZombie_Walk_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,12 +100,12 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Player_Shoot_00
+      name: WorkerZombie_Walk_00
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 342.66666
+        width: 257
         height: 765
       alignment: 9
       pivot: {x: 0.5, y: 0.18}
@@ -115,19 +115,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: dc5a2a69799261941bf0e3026b98d6b3
-      internalID: -859379350
+      spriteID: 19df10af9ae88564f95f6ba70fcd3631
+      internalID: 142441215
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_01
+      name: WorkerZombie_Walk_01
       rect:
         serializedVersion: 2
-        x: 342.66666
+        x: 257
         y: 0
-        width: 342.66666
+        width: 257
         height: 765
       alignment: 9
       pivot: {x: 0.5, y: 0.18}
@@ -137,19 +137,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c49f473029956f644b8fd4d4227bb725
-      internalID: 1601168658
+      spriteID: 035a9e08c74267a40bfec233fe3e0ebf
+      internalID: -1683715307
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_02
+      name: WorkerZombie_Walk_02
       rect:
         serializedVersion: 2
-        x: 685.3333
+        x: 514
         y: 0
-        width: 342.66666
+        width: 257
         height: 765
       alignment: 9
       pivot: {x: 0.5, y: 0.18}
@@ -159,19 +159,41 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 840060f6a60398f45940f07327705dff
-      internalID: 691907044
+      spriteID: df61d513b7e1c9b42abf411e349d7d11
+      internalID: -1749246927
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_03
+      name: WorkerZombie_Walk_03
+      rect:
+        serializedVersion: 2
+        x: 771
+        y: 0
+        width: 257
+        height: 765
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0a0b870350ca5c34198669ee656cbfdb
+      internalID: 312520395
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WorkerZombie_Walk_04
       rect:
         serializedVersion: 2
         x: 1028
         y: 0
-        width: 342.66666
+        width: 257
         height: 765
       alignment: 9
       pivot: {x: 0.5, y: 0.18}
@@ -181,19 +203,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7b5eac7b3dc7fca48b8028e545fe8889
-      internalID: -687271696
+      spriteID: cf1af85aff6e5e34292e39c7237200fb
+      internalID: 686439176
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_04
+      name: WorkerZombie_Walk_05
       rect:
         serializedVersion: 2
-        x: 1370.6666
+        x: 1285
         y: 0
-        width: 342.66666
+        width: 257
         height: 765
       alignment: 9
       pivot: {x: 0.5, y: 0.18}
@@ -203,19 +225,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8d752276d30fee44fb5508f07bd7737d
-      internalID: 324689981
+      spriteID: 648db0cbfd5bdaa46baeb0eba4026573
+      internalID: -536437365
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_05
+      name: WorkerZombie_Walk_06
       rect:
         serializedVersion: 2
-        x: 1713.3333
+        x: 1542
         y: 0
-        width: 342.66666
+        width: 257
         height: 765
       alignment: 9
       pivot: {x: 0.5, y: 0.18}
@@ -225,8 +247,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9fb7da6c1d050f44881009bef7a09935
-      internalID: 1728141815
+      spriteID: 5c1b6fde53fe512418e2d8e02abebe84
+      internalID: 752188570
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: WorkerZombie_Walk_07
+      rect:
+        serializedVersion: 2
+        x: 1799
+        y: 0
+        width: 257
+        height: 765
+      alignment: 9
+      pivot: {x: 0.5, y: 0.18}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 97fbcb11fc3dd3d4eaee4b55f58992ce
+      internalID: -1813107256
       vertices: []
       indices: 
       edges: []
@@ -235,7 +279,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: c821101d70fab1d44a2848e5d597b26a
+    spriteID: 1b025ace43906ca4f9b55c4375c3d0d7
     internalID: 0
     vertices: []
     indices: 
@@ -245,12 +289,14 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Player_Shoot_00: -859379350
-      Player_Shoot_01: 1601168658
-      Player_Shoot_02: 691907044
-      Player_Shoot_03: -687271696
-      Player_Shoot_04: 324689981
-      Player_Shoot_05: 1728141815
+      WorkerZombie_Walk_00: 142441215
+      WorkerZombie_Walk_01: -1683715307
+      WorkerZombie_Walk_02: -1749246927
+      WorkerZombie_Walk_03: 312520395
+      WorkerZombie_Walk_04: 686439176
+      WorkerZombie_Walk_05: -536437365
+      WorkerZombie_Walk_06: 752188570
+      WorkerZombie_Walk_07: -1813107256
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

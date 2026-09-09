@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: c799ff4e7b0db20408e70cc136bffe83
+guid: 48874e22829d9fb43bc1dad06a902f03
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7263455119872054733
-    second: Survivor_Shoot_0
+      213: -8321641982775107868
+    second: WorkerZombie_Attack_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Player_Shoot_00
+      name: WorkerZombie_Attack_00
       rect:
         serializedVersion: 2
         x: 0
@@ -115,14 +115,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: dc5a2a69799261941bf0e3026b98d6b3
-      internalID: -859379350
+      spriteID: da01dc48da275864b80d60635bd4905d
+      internalID: -1108662618
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_01
+      name: WorkerZombie_Attack_01
       rect:
         serializedVersion: 2
         x: 342.66666
@@ -137,14 +137,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c49f473029956f644b8fd4d4227bb725
-      internalID: 1601168658
+      spriteID: d994c89e66515754895a928203f6b685
+      internalID: -1683538753
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_02
+      name: WorkerZombie_Attack_02
       rect:
         serializedVersion: 2
         x: 685.3333
@@ -159,14 +159,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 840060f6a60398f45940f07327705dff
-      internalID: 691907044
+      spriteID: 5533c64842e55824298c6724d8f95ad5
+      internalID: 168102666
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_03
+      name: WorkerZombie_Attack_03
       rect:
         serializedVersion: 2
         x: 1028
@@ -181,14 +181,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7b5eac7b3dc7fca48b8028e545fe8889
-      internalID: -687271696
+      spriteID: 5480ac89d3f56104181fc5aef0bf9960
+      internalID: 375732646
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_04
+      name: WorkerZombie_Attack_04
       rect:
         serializedVersion: 2
         x: 1370.6666
@@ -203,14 +203,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8d752276d30fee44fb5508f07bd7737d
-      internalID: 324689981
+      spriteID: 75b9b65e8346aba40bed00ea9a25190d
+      internalID: -1112964622
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Player_Shoot_05
+      name: WorkerZombie_Attack_05
       rect:
         serializedVersion: 2
         x: 1713.3333
@@ -225,8 +225,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9fb7da6c1d050f44881009bef7a09935
-      internalID: 1728141815
+      spriteID: 7799194c5265bf34f8b7465b57a0fb0c
+      internalID: -1622495376
       vertices: []
       indices: 
       edges: []
@@ -235,7 +235,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: c821101d70fab1d44a2848e5d597b26a
+    spriteID: 9773386880f109a4b8188d6d0d678016
     internalID: 0
     vertices: []
     indices: 
@@ -245,12 +245,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Player_Shoot_00: -859379350
-      Player_Shoot_01: 1601168658
-      Player_Shoot_02: 691907044
-      Player_Shoot_03: -687271696
-      Player_Shoot_04: 324689981
-      Player_Shoot_05: 1728141815
+      WorkerZombie_Attack_00: -1108662618
+      WorkerZombie_Attack_01: -1683538753
+      WorkerZombie_Attack_02: 168102666
+      WorkerZombie_Attack_03: 375732646
+      WorkerZombie_Attack_04: -1112964622
+      WorkerZombie_Attack_05: -1622495376
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
