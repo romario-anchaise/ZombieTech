@@ -12,14 +12,27 @@ public static class ZombieSetupBuilder
 {
     private const string WalkSheetPath = "Assets/Art/Characters/Zombies/WorkerZombie_Walk.png";
     private const string AttackSheetPath = "Assets/Art/Characters/Zombies/WorkerZombie_Attack.png";
+    private const string DeathSheetPath = "Assets/Art/Characters/Zombies/WorkerZombie_Death.png";
+    private const string EatSheetPath = "Assets/Art/Characters/Zombies/WorkerZombie_Eat.png";
     private const string AnimationFolder = "Assets/Animations/Zombie";
     private const string WalkAnimationPath = AnimationFolder + "/WorkerZombie_Walk.anim";
     private const string AttackAnimationPath = AnimationFolder + "/WorkerZombie_Attack.anim";
+    private const string DeathAnimationPath = AnimationFolder + "/WorkerZombie_Death.anim";
+    private const string EatAnimationPath = AnimationFolder + "/WorkerZombie_Eat.anim";
     private const string ControllerPath = AnimationFolder + "/WorkerZombie.controller";
     private const string MaterialPath = "Assets/Materials/WorkerZombieCheckerboardKey.mat";
     private const string PrefabFolder = "Assets/Prefabs";
     private const string PrefabPath = PrefabFolder + "/WorkerZombie.prefab";
     private const string InstanceName = "Worker Zombie";
+    private static readonly string[] ZombieSoundPaths =
+    {
+        "Assets/Audio/Zombie/Zombie_01.mp3",
+        "Assets/Audio/Zombie/Zombie_02.mp3",
+        "Assets/Audio/Zombie/Zombie_03.mp3",
+        "Assets/Audio/Zombie/Zombie_04.mp3",
+        "Assets/Audio/Zombie/Zombie_06.mp3",
+        "Assets/Audio/Zombie/Zombie_07.mp3"
+    };
 
     private static bool isBuilding;
 
@@ -40,9 +53,18 @@ public static class ZombieSetupBuilder
         {
             ConfigureSpriteSheet(WalkSheetPath, 8, "Walk");
             ConfigureSpriteSheet(AttackSheetPath, 6, "Attack");
+            ConfigureSpriteSheet(DeathSheetPath, 6, "Death");
+            ConfigureSpriteSheet(EatSheetPath, 6, "Eat");
             Sprite[] walkSprites = LoadSprites(WalkSheetPath);
             Sprite[] attackSprites = LoadSprites(AttackSheetPath);
-            if (walkSprites.Length != 8 || attackSprites.Length != 6)
+            Sprite[] deathSprites = LoadSprites(DeathSheetPath);
+            Sprite[] eatSprites = LoadSprites(EatSheetPath);
+            AudioClip[] zombieSounds = ZombieSoundPaths
+                .Select(AssetDatabase.LoadAssetAtPath<AudioClip>)
+                .ToArray();
+            if (walkSprites.Length != 8 || attackSprites.Length != 6 || deathSprites.Length != 6 ||
+                eatSprites.Length != 6 ||
+                zombieSounds.Any(clip => clip == null))
             {
                 Debug.LogError("No se pudo configurar el zombie: las hojas no contienen los frames esperados.");
                 return;
@@ -56,8 +78,10 @@ public static class ZombieSetupBuilder
             Material material = CreateMaterial();
             AnimationClip walkClip = CreateClip(WalkAnimationPath, walkSprites, 9f, true);
             AnimationClip attackClip = CreateClip(AttackAnimationPath, attackSprites, 10f, false);
-            AnimatorController controller = CreateAnimatorController(walkClip, attackClip);
-            GameObject prefab = CreatePrefab(walkSprites[0], material, controller);
+            AnimationClip deathClip = CreateClip(DeathAnimationPath, deathSprites, 8f, false);
+            AnimationClip eatClip = CreateClip(EatAnimationPath, eatSprites, 7f, true);
+            AnimatorController controller = CreateAnimatorController(walkClip, attackClip, deathClip, eatClip);
+            GameObject prefab = CreatePrefab(walkSprites[0], material, controller, zombieSounds);
             PlaceSingleInstance(prefab);
 
             AssetDatabase.SaveAssets();
@@ -77,11 +101,29 @@ public static class ZombieSetupBuilder
             return;
 
         if (AssetDatabase.LoadAssetAtPath<Texture2D>(WalkSheetPath) == null ||
-            AssetDatabase.LoadAssetAtPath<Texture2D>(AttackSheetPath) == null)
+            AssetDatabase.LoadAssetAtPath<Texture2D>(AttackSheetPath) == null ||
+            AssetDatabase.LoadAssetAtPath<Texture2D>(DeathSheetPath) == null ||
+            AssetDatabase.LoadAssetAtPath<Texture2D>(EatSheetPath) == null ||
+            ZombieSoundPaths.Any(path => AssetDatabase.LoadAssetAtPath<AudioClip>(path) == null))
             return;
 
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        bool healthMissing = prefab == null || prefab.GetComponent<ZombieHealth>() == null;
+        bool audioMissing = prefab == null || prefab.GetComponent<ZombieAudio>() == null;
+        bool pivotsNeedUpdate = !HasExpectedPivots(EatSheetPath, new[]
+        {
+            0.2314f, 0.2314f, 0.2314f, 0.2314f, 0.2314f, 0.2314f
+        }) || !HasExpectedPivots(DeathSheetPath, new[]
+        {
+            0.1804f, 0.1804f, 0.1804f, 0.1765f, 0.1582f, 0.1582f
+        });
+
         if (AssetDatabase.LoadAssetAtPath<AnimationClip>(AttackAnimationPath) == null ||
-            AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) == null ||
+            AssetDatabase.LoadAssetAtPath<AnimationClip>(DeathAnimationPath) == null ||
+            AssetDatabase.LoadAssetAtPath<AnimationClip>(EatAnimationPath) == null ||
+            healthMissing ||
+            audioMissing ||
+            pivotsNeedUpdate ||
             GameObject.Find(InstanceName) == null)
             BuildZombie();
     }
@@ -113,12 +155,23 @@ public static class ZombieSetupBuilder
 
         for (int index = 0; index < frameCount; index++)
         {
+            float pivotY = 0.18f;
+            if (animationName == "Death")
+            {
+                float[] deathPivotY = { 0.1804f, 0.1804f, 0.1804f, 0.1765f, 0.1582f, 0.1582f };
+                pivotY = deathPivotY[index];
+            }
+            else if (animationName == "Eat")
+            {
+                pivotY = 0.2314f;
+            }
+
             spriteRects[index] = new SpriteRect
             {
                 name = $"WorkerZombie_{animationName}_{index:00}",
                 rect = new Rect(index * frameWidth, 0f, frameWidth, texture.height),
                 alignment = SpriteAlignment.Custom,
-                pivot = new Vector2(0.5f, 0.18f),
+                pivot = new Vector2(0.5f, pivotY),
                 spriteID = GUID.Generate()
             };
         }
@@ -142,6 +195,22 @@ public static class ZombieSetupBuilder
             .OfType<Sprite>()
             .OrderBy(sprite => sprite.name, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static bool HasExpectedPivots(string path, float[] expectedPivotY)
+    {
+        Sprite[] sprites = LoadSprites(path);
+        if (sprites.Length != expectedPivotY.Length)
+            return false;
+
+        for (int index = 0; index < sprites.Length; index++)
+        {
+            float normalizedPivotY = sprites[index].pivot.y / sprites[index].rect.height;
+            if (!Mathf.Approximately(normalizedPivotY, expectedPivotY[index]))
+                return false;
+        }
+
+        return true;
     }
 
     private static Material CreateMaterial()
@@ -204,7 +273,8 @@ public static class ZombieSetupBuilder
         return existing;
     }
 
-    private static AnimatorController CreateAnimatorController(AnimationClip walkClip, AnimationClip attackClip)
+    private static AnimatorController CreateAnimatorController(AnimationClip walkClip, AnimationClip attackClip,
+        AnimationClip deathClip, AnimationClip eatClip)
     {
         AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
         if (controller == null)
@@ -212,6 +282,8 @@ public static class ZombieSetupBuilder
 
         controller.parameters = Array.Empty<AnimatorControllerParameter>();
         controller.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
+        controller.AddParameter("Die", AnimatorControllerParameterType.Trigger);
+        controller.AddParameter("Eat", AnimatorControllerParameterType.Trigger);
 
         AnimatorStateMachine machine = controller.layers[0].stateMachine;
         foreach (ChildAnimatorState child in machine.states)
@@ -221,11 +293,15 @@ public static class ZombieSetupBuilder
 
         AnimatorState walkState = machine.AddState("Walk", new Vector3(300f, 80f));
         AnimatorState attackState = machine.AddState("Attack", new Vector3(540f, 80f));
+        AnimatorState deathState = machine.AddState("Death", new Vector3(540f, 210f));
+        AnimatorState eatState = machine.AddState("Eat", new Vector3(780f, 80f));
         walkState.motion = walkClip;
         attackState.motion = attackClip;
+        deathState.motion = deathClip;
+        eatState.motion = eatClip;
         machine.defaultState = walkState;
 
-        AnimatorStateTransition toAttack = machine.AddAnyStateTransition(attackState);
+        AnimatorStateTransition toAttack = walkState.AddTransition(attackState);
         toAttack.hasExitTime = false;
         toAttack.hasFixedDuration = true;
         toAttack.duration = 0.04f;
@@ -237,12 +313,26 @@ public static class ZombieSetupBuilder
         toWalk.exitTime = 0.95f;
         toWalk.hasFixedDuration = true;
         toWalk.duration = 0.04f;
+
+        AnimatorStateTransition toDeath = machine.AddAnyStateTransition(deathState);
+        toDeath.hasExitTime = false;
+        toDeath.hasFixedDuration = true;
+        toDeath.duration = 0.03f;
+        toDeath.canTransitionToSelf = false;
+        toDeath.AddCondition(AnimatorConditionMode.If, 0f, "Die");
+
+        AnimatorStateTransition toEat = machine.AddAnyStateTransition(eatState);
+        toEat.hasExitTime = false;
+        toEat.hasFixedDuration = true;
+        toEat.duration = 0.04f;
+        toEat.canTransitionToSelf = false;
+        toEat.AddCondition(AnimatorConditionMode.If, 0f, "Eat");
         EditorUtility.SetDirty(controller);
         return controller;
     }
 
     private static GameObject CreatePrefab(Sprite idleSprite, Material material,
-        AnimatorController controller)
+        AnimatorController controller, AudioClip[] zombieSounds)
     {
         var root = new GameObject(InstanceName);
 
@@ -265,7 +355,19 @@ public static class ZombieSetupBuilder
 
         Animator animator = root.AddComponent<Animator>();
         animator.runtimeAnimatorController = controller;
+        AudioSource audioSource = root.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+        audioSource.volume = 0.65f;
+        audioSource.spatialBlend = 0.2f;
+        ZombieAudio zombieAudio = root.AddComponent<ZombieAudio>();
+        zombieAudio.Configure(
+            new[] { zombieSounds[0], zombieSounds[1] },
+            new[] { zombieSounds[2], zombieSounds[3] },
+            zombieSounds[4],
+            zombieSounds[5]);
         root.AddComponent<ZombiePatrol>();
+        root.AddComponent<ZombieHealth>();
 
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
         UnityEngine.Object.DestroyImmediate(root);

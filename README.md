@@ -15,9 +15,12 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Automovil destruido y barrera de concreto utilizables como plataformas.
 - Plataformas atravesables con S o flecha abajo.
 - Musica de fondo automatica y en bucle.
-- Animacion del personaje disparando quieto con una pistola.
-- Un zombie obrero cabezon, creado como prefab, que persigue y ataca al jugador.
+- Disparo de proyectiles animados hacia ambos lados.
+- Un zombie obrero cabezon, creado como prefab, que persigue, ataca y reproduce su muerte.
+- Sistema de 3 puntos de vida para el zombie; cada bala causa 1 punto de dano y el tercer impacto activa su muerte.
 - Animacion de ataque sincronizada con la muerte del personaje.
+- Voces del zombie para ambiente, ataque, daño y muerte.
+- Animacion en bucle del zombie alimentandose del jugador despues del Game Over.
 
 ## Controles
 
@@ -26,7 +29,7 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Espacio: saltar.
 - Soltar Espacio anticipadamente: salto corto.
 - S o flecha abajo: bajar a traves de una plataforma.
-- F o Ctrl izquierdo: reproducir la animacion de disparo estando quieto.
+- F o Ctrl izquierdo: disparar una bala estando quieto.
 
 ## Documentacion
 

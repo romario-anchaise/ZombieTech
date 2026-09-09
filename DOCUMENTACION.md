@@ -52,7 +52,7 @@ Ciudad abandonada con vehículos destruidos, barreras de concreto, edificios det
 4. Evita o combate zombis.
 5. Alcanza una salida o punto seguro para completar el nivel.
 
-Actualmente están implementados los dos primeros pasos. Los demás forman parte del desarrollo pendiente.
+Actualmente están implementados la exploración, los obstáculos y el combate básico contra un zombi. La recolección de recursos y la salida del nivel forman parte del desarrollo pendiente.
 
 ## 5. Controles
 
@@ -131,31 +131,38 @@ La acción de disparo se activa con `F` o `Ctrl` izquierdo únicamente cuando el
 
 La hoja original de disparo tenía un tablero blanco y gris incrustado en la propia imagen. Por eso se creó `PlayerShootCheckerboardKey.mat`, basado en `CheckerboardKeySprite.shader`. El controlador aplica ese material durante 0.5 segundos y luego restaura el material normal. La textura también se importa con filtro `Point`, sin mipmaps y sin compresión para impedir que Unity mezcle el fondo con los bordes del personaje.
 
+A los 0.22 segundos de iniciar la animación, `PlayerController2D` instancia `Assets/Prefabs/Bullet.prefab` frente a la pistola. La bala reproduce cuatro fotogramas, se desplaza a 13 unidades por segundo y se destruye después de 2 segundos o al tocar un obstáculo. La dirección depende de la orientación del personaje, por lo que funciona hacia la izquierda y hacia la derecha. El material `BulletAdditive.mat` hace invisible el fondo negro de la hoja mediante el shader `AdditiveProjectile.shader`.
+
 ### 6.7. Primer enemigo
 
 El nivel contiene un solo zombi obrero cabezón situado en el lado derecho. Utiliza ocho fotogramas de caminata, seis de ataque, `Rigidbody2D`, `CapsuleCollider2D`, `Animator` y el script `ZombiePatrol.cs`. Mientras exista el objeto `Player`, el enemigo lo persigue por todo el escenario y comienza el ataque al quedar a 0.9 unidades. El golpe se aplica después de 0.32 segundos para que la acción coincida con el frame de contacto.
 
 Cuando recibe el ataque, `PlayerController2D.Die()` detiene el desplazamiento, bloquea nuevas entradas y activa `Die` en el Animator. `Player_Death.anim` reproduce seis fotogramas y permanece en la pose final porque el estado `Death` no tiene transición de salida.
 
+Después de terminar la caída del jugador, `ZombiePatrol` oculta su sprite original, alinea al enemigo con el cuerpo y activa el estado `Eat`. `WorkerZombie_Eat.anim` reproduce en bucle seis fotogramas con ambos personajes y sangre estilizada. Los pivotes se calcularon a partir del borde inferior de cada hoja para que las poses de muerte y alimentación permanezcan apoyadas sobre el suelo.
+
 El enemigo se guardó como `Assets/Prefabs/WorkerZombie.prefab` y la escena contiene exactamente una instancia dentro del objeto organizador `Enemies`. Esto demuestra el uso de Prefabs solicitado por la rúbrica sin llenar el escenario de copias.
+
+El componente `ZombieHealth` asigna 3 puntos de vida al enemigo. Cada proyectil causa 1 punto de daño, muestra un destello rojo como respuesta visual y se destruye al impactar. El tercer disparo cancela el movimiento y cualquier ataque pendiente, desactiva las colisiones y reproduce `WorkerZombie_Death.anim`, una secuencia de seis fotogramas. La instancia se elimina al terminar la animación.
 
 ## 7. Arquitectura del proyecto
 
 ```text
 Assets/
 ├── Animations/Player/       Animaciones y Animator Controller
-├── Animations/Zombie/       Caminata y controlador del enemigo
+├── Animations/              Animaciones del jugador, zombi y proyectil
 ├── Art/
 │   ├── Backgrounds/         Fondo de la ciudad
-│   └── Characters/          Hojas de sprites del superviviente
+│   ├── Characters/          Hojas de sprites de personajes
+│   └── Projectiles/         Hoja de cuatro frames de la bala
 ├── Editor/                  Herramientas de configuración automática
 ├── Materials/               Material normal y material especial de disparo
-├── Prefabs/                 Prefab reutilizable del zombi
+├── Prefabs/                 Prefabs reutilizables del zombi y la bala
 ├── Resources/Audio/         Música cargada durante la ejecución
 ├── Scenes/                  Escena principal
 ├── Scripts/                 Código ejecutado por el juego
 ├── Settings/                Configuración de URP 2D e Input System
-└── Shaders/                 Filtro visual para la hoja de disparo
+└── Shaders/                 Filtros visuales para personaje y proyectil
 ```
 
 ## 8. Scripts principales
@@ -170,6 +177,10 @@ Assets/
 | `CheckerboardKeySprite.shader` | Descarta los tonos del tablero que venían incrustados en la hoja de disparo. |
 | `ZombiePatrol.cs` | Mueve al zombi automáticamente dentro de su zona de patrullaje y actualiza su orientación. |
 | `ZombieSetupBuilder.cs` | Importa la hoja del enemigo, crea su animación, material, Animator, prefab y única instancia. |
+| `BulletProjectile.cs` | Mueve la bala, controla su tiempo de vida y aplica daño cuando impacta al zombi. |
+| `ZombieHealth.cs` | Gestiona los 3 puntos de vida, el destello de impacto y la eliminación del enemigo. |
+| `ZombieAudio.cs` | Reproduce voces ambientales, ataques, daño y muerte con pequeñas variaciones de tono. |
+| `BulletSetupBuilder.cs` | Divide la hoja de bala, crea su animación, material, controlador y prefab, y lo asigna al jugador. |
 
 Los scripts de la carpeta `Editor` solo se ejecutan dentro del editor de Unity. Los scripts de la carpeta `Scripts` forman parte del juego final.
 
@@ -230,7 +241,7 @@ Si Unity informa que la escena cambió en el disco, se debe seleccionar **Reload
 ## 13. Limitaciones actuales
 
 - El zombi persigue y mata al jugador, pero todavía no existe un sistema gradual de vidas o puntos de salud.
-- El disparo del jugador sigue siendo visual y aún no daña al zombi.
+- El zombi desaparece después de su animación de muerte; todavía no deja recompensas ni objetos.
 - No existen objetos coleccionables ni inventario.
 - La cámara todavía no sigue al jugador durante un nivel extenso.
 - Solo existe una escena jugable.
@@ -239,9 +250,9 @@ Si Unity informa que la escena cambió en el disco, se debe seleccionar **Reload
 
 ## 14. Próximas mejoras recomendadas
 
-1. Crear proyectiles para que el disparo pueda dañar al zombi.
-2. Implementar puntos de salud, daño gradual y muerte del enemigo.
-3. Agregar una opción para reiniciar después de morir.
+1. Agregar una opción para reiniciar después de morir.
+2. Mostrar la vida del jugador y del enemigo en la interfaz.
+3. Agregar recompensas o munición al derrotar al zombi.
 4. Añadir botiquines, baterías y otros objetos coleccionables.
 5. Incorporar una cámara que siga al personaje y límites de nivel.
 6. Crear interfaz con vida, cantidad de objetos y objetivo actual.
@@ -257,6 +268,7 @@ Si Unity informa que la escena cambió en el disco, se debe seleccionar **Reload
 - Antes de publicar o comercializar el juego debe verificarse que se cuenta con autorización para distribuir cada imagen, sprite y archivo de audio.
 - Los futuros recursos externos deben conservar su archivo de licencia y los créditos exigidos por sus autores.
 - Se recomienda priorizar recursos con licencia CC0 o licencias que permitan expresamente su uso en videojuegos.
+- Las seis voces del zombi proceden de **Zomby SFX Pack**, creado por saturn91 y publicado con licencia CC0 en OpenGameArt: https://opengameart.org/content/zomby-sfx-pack. La atribución no es obligatoria, pero se conserva `Assets/Audio/Zombie/LICENSE.txt` como registro de procedencia.
 
 ## 16. Control de versiones
 
@@ -311,7 +323,7 @@ Los clips generados tienen esta velocidad:
 | `Player_Jump.anim` | 8 | No |
 | `Player_Fall.anim` | 6 | No |
 | `Player_Shoot.anim` | 12 | No |
-| `Player_Death.anim` | 8 | No |
+| `Player_Death.anim` | 6 | No |
 
 Para ver los fotogramas manualmente: seleccionar una hoja en **Project**, abrir **Inspector**, desplegar la flecha del archivo o pulsar **Sprite Editor**. Para revisar los clips: abrir `Assets/Animations/Player/` y seleccionar cada archivo `.anim`.
 
@@ -395,14 +407,17 @@ bool shootPressed = keyboard.fKey.wasPressedThisFrame ||
                     keyboard.leftCtrlKey.wasPressedThisFrame;
 
 if (shootPressed && isGrounded &&
-    Mathf.Abs(horizontalInput) < 0.01f)
+    Mathf.Abs(horizontalInput) < 0.01f &&
+    Time.time >= nextShootTime)
 {
+    nextShootTime = Time.time + shootCooldown;
     animator.SetTrigger("Shoot");
     StartCoroutine(UseShootMaterialTemporarily());
+    bulletSpawnRoutine = StartCoroutine(SpawnBulletAfterDelay());
 }
 ```
 
-La corrutina coloca el material especial durante `0.5` segundos y luego devuelve el material normal. En este avance el disparo es una animación visual; todavía no crea una bala ni aplica daño.
+La primera corrutina coloca el material especial durante `0.5` segundos y luego devuelve el material normal. La segunda espera `0.22` segundos para sincronizar la salida de la bala con el fogonazo de la pistola, instancia `Bullet.prefab` y le entrega la dirección actual del personaje. `BulletProjectile.OnTriggerEnter2D` busca `ZombieHealth` en el objeto impactado y le aplica 1 punto de daño.
 
 ### 19.5. Actualización del Animator
 
@@ -426,9 +441,9 @@ animator.SetBool("IsGrounded", isGrounded);
 | Gestión de assets | Carpetas separadas para arte, audio, animaciones, materiales, escenas y scripts | Implementado |
 | Git | Repositorio público, `.gitignore` de Unity y commits descriptivos | Implementado |
 | Personaje con movimiento y acción | Movimiento, salto, descenso por plataformas y animación de disparo | Implementado |
-| Mecánica de interacción | El zombi persigue, ataca y provoca la muerte animada del jugador | Implementado |
+| Mecánica de interacción | El zombi ataca al jugador y las balas le causan daño hasta eliminarlo | Implementado |
 | Prefabs repetitivos | `WorkerZombie.prefab` permite crear enemigos reutilizables; la escena usa una instancia | Implementado |
 | Inicio y reinicio | La escena inicia con **Play**, pero aún no existe botón o condición de reinicio | Pendiente |
 | Video de demostración | Debe grabarse un video de máximo dos minutos mostrando gameplay y explicando una parte del código | Pendiente |
 
-Para aspirar a la calificación máxima, los siguientes pasos prioritarios son implementar una interacción clara (por ejemplo, una bala que impacta al zombi o un objeto coleccionable), agregar reinicio y comprobar que la consola esté libre de errores durante la demostración.
+La interacción principal ya es verificable mediante balas que impactan y dañan al zombi. Los siguientes pasos prioritarios son agregar reinicio, una interfaz de vida y comprobar que la consola permanezca libre de errores durante la demostración.

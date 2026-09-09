@@ -1,10 +1,9 @@
-Shader "ZombieGame/CheckerboardKey"
+Shader "ZombieGame/AdditiveProjectile"
 {
     Properties
     {
-        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "black" {}
         _Color ("Tint", Color) = (1,1,1,1)
-        _Cutoff ("Background Cutoff", Range(0.35, 1)) = 0.55
     }
 
     SubShader
@@ -15,13 +14,12 @@ Shader "ZombieGame/CheckerboardKey"
             "IgnoreProjector"="True"
             "RenderType"="Transparent"
             "PreviewType"="Plane"
-            "CanUseSpriteAtlas"="True"
         }
 
         Cull Off
         Lighting Off
         ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend One One
 
         Pass
         {
@@ -46,7 +44,6 @@ Shader "ZombieGame/CheckerboardKey"
 
             sampler2D _MainTex;
             fixed4 _Color;
-            float _Cutoff;
 
             v2f vert(appdata input)
             {
@@ -59,18 +56,8 @@ Shader "ZombieGame/CheckerboardKey"
 
             fixed4 frag(v2f input) : SV_Target
             {
-                fixed4 sourceColor = tex2D(_MainTex, input.uv);
-                float highest = max(sourceColor.r, max(sourceColor.g, sourceColor.b));
-                float lowest = min(sourceColor.r, min(sourceColor.g, sourceColor.b));
-                float colorRange = highest - lowest;
-
-                // The generated sheets contain two light neutral checker colors.
-                // Discard only bright, nearly gray pixels so skin, clothes and hair remain intact.
-                if (lowest > _Cutoff && colorRange < 0.12)
-                    discard;
-
-                clip(sourceColor.a - 0.01);
-                return sourceColor * input.color;
+                fixed4 color = tex2D(_MainTex, input.uv);
+                return fixed4(color.rgb * input.color.rgb, 1);
             }
             ENDCG
         }

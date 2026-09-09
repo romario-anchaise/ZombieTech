@@ -24,6 +24,10 @@ public sealed class PlayerController2D : MonoBehaviour
     [Header("Disparo")]
     [SerializeField] private Material shootMaterial;
     [SerializeField] private float shootAnimationDuration = 0.5f;
+    [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private Vector2 bulletSpawnOffset = new Vector2(0.72f, 1.05f);
+    [SerializeField] private float bulletSpawnDelay = 0.22f;
+    [SerializeField] private float shootCooldown = 0.5f;
 
     private Rigidbody2D body;
     private CapsuleCollider2D bodyCollider;
@@ -38,6 +42,8 @@ public sealed class PlayerController2D : MonoBehaviour
     private bool isDead;
     private Material defaultMaterial;
     private Coroutine shootMaterialRoutine;
+    private Coroutine bulletSpawnRoutine;
+    private float nextShootTime;
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int VerticalSpeedHash = Animator.StringToHash("VerticalSpeed");
@@ -78,12 +84,18 @@ public sealed class PlayerController2D : MonoBehaviour
             TryDropThroughPlatform();
 
         bool shootPressed = keyboard.fKey.wasPressedThisFrame || keyboard.leftCtrlKey.wasPressedThisFrame;
-        if (shootPressed && isGrounded && Mathf.Abs(horizontalInput) < 0.01f && animator != null)
+        if (shootPressed && Time.time >= nextShootTime && isGrounded &&
+            Mathf.Abs(horizontalInput) < 0.01f && animator != null)
         {
+            nextShootTime = Time.time + shootCooldown;
             animator.SetTrigger(ShootHash);
             if (shootMaterialRoutine != null)
                 StopCoroutine(shootMaterialRoutine);
             shootMaterialRoutine = StartCoroutine(UseShootMaterialTemporarily());
+
+            if (bulletSpawnRoutine != null)
+                StopCoroutine(bulletSpawnRoutine);
+            bulletSpawnRoutine = StartCoroutine(SpawnBulletAfterDelay());
         }
 
         if (horizontalInput > 0.01f)
@@ -177,6 +189,29 @@ public sealed class PlayerController2D : MonoBehaviour
         shootMaterialRoutine = null;
     }
 
+    private IEnumerator SpawnBulletAfterDelay()
+    {
+        yield return new WaitForSeconds(bulletSpawnDelay);
+
+        if (!isDead && bulletPrefab != null)
+        {
+            Vector2 direction = spriteRenderer.flipX ? Vector2.left : Vector2.right;
+            Vector2 offset = new Vector2(
+                bulletSpawnOffset.x * direction.x,
+                bulletSpawnOffset.y);
+            GameObject bulletObject = Instantiate(
+                bulletPrefab,
+                (Vector2)transform.position + offset,
+                Quaternion.identity);
+
+            BulletProjectile projectile = bulletObject.GetComponent<BulletProjectile>();
+            if (projectile != null)
+                projectile.Initialize(direction);
+        }
+
+        bulletSpawnRoutine = null;
+    }
+
     public void Die()
     {
         if (isDead)
@@ -192,6 +227,12 @@ public sealed class PlayerController2D : MonoBehaviour
             shootMaterialRoutine = null;
         }
 
+        if (bulletSpawnRoutine != null)
+        {
+            StopCoroutine(bulletSpawnRoutine);
+            bulletSpawnRoutine = null;
+        }
+
         if (shootMaterial != null)
             spriteRenderer.sharedMaterial = shootMaterial;
 
@@ -203,6 +244,12 @@ public sealed class PlayerController2D : MonoBehaviour
             animator.SetBool(GroundedHash, true);
             animator.SetTrigger(DieHash);
         }
+    }
+
+    public void HideForEating()
+    {
+        if (isDead && spriteRenderer != null)
+            spriteRenderer.enabled = false;
     }
 
     private void UpdateAnimator()

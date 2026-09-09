@@ -1,0 +1,8 @@
+Zomby SFX Pack
+Author: saturn91
+Source: https://opengameart.org/content/zomby-sfx-pack
+License: CC0 1.0 Universal
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+The author states that attribution is not required. This file is retained to
+document the origin and license of Zombie_01.mp3 through Zombie_07.mp3.

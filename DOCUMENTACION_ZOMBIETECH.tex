@@ -332,6 +332,9 @@ Assets/
 |   |-- WorkerZombie.controller
 |   |-- WorkerZombie_Walk.anim
 |   `-- WorkerZombie_Attack.anim
+|-- Animations/Projectiles/
+|   |-- Bullet.controller
+|   `-- Bullet_Flight.anim
 |-- Art/
 |   |-- Backgrounds/ZombieCityBackground.png
 |   `-- Characters/
@@ -343,21 +346,29 @@ Assets/
 |       `-- Zombies/
 |           |-- WorkerZombie_Walk.png
 |           `-- WorkerZombie_Attack.png
+|   `-- Projectiles/Bullet_Flight.png
 |-- Editor/
 |   |-- PlayerSetupBuilder.cs
 |   |-- ZombieBackgroundInstaller.cs
-|   `-- EnvironmentPlatformInstaller.cs
+|   |-- EnvironmentPlatformInstaller.cs
+|   `-- BulletSetupBuilder.cs
 |-- Resources/Audio/BecomeTheAssassin.mp3
 |-- Scenes/SampleScene.unity
 |-- Scripts/
 |   |-- PlayerController2D.cs
 |   |-- BackgroundMusic.cs
-|   `-- ZombiePatrol.cs
+|   |-- ZombiePatrol.cs
+|   |-- ZombieHealth.cs
+|   `-- BulletProjectile.cs
 |-- Materials/
 |   |-- PlayerCheckerboardKey.mat
 |   `-- PlayerShootCheckerboardKey.mat
-|-- Shaders/CheckerboardKeySprite.shader
-|-- Prefabs/WorkerZombie.prefab
+|-- Shaders/
+|   |-- CheckerboardKeySprite.shader
+|   `-- AdditiveProjectile.shader
+|-- Prefabs/
+|   |-- WorkerZombie.prefab
+|   `-- Bullet.prefab
 `-- Settings/
 \end{lstlisting}
 
@@ -470,13 +481,17 @@ Seleccionar una hoja y revisar su importación en \textbf{Inspector}. La flecha 
 
 La hoja original tenía un tablero blanco y gris incrustado en la imagen. Se creó \path{PlayerShootCheckerboardKey.mat} con el shader \path{CheckerboardKeySprite.shader}. Este shader descarta los tonos neutros del tablero. \path{PlayerController2D.cs} aplica el material durante 0.5 segundos y después restaura el material normal.
 
-La acción solo se permite cuando el personaje está en el suelo y quieto. En el avance actual el disparo es visual: todavía no crea un proyectil ni causa daño.
+La acción solo se permite cuando el personaje está en el suelo y quieto. Después de 0.22 segundos se instancia \path{Bullet.prefab} frente a la pistola. El proyectil reproduce cuatro frames, viaja a 13 unidades por segundo en la dirección en que mira el personaje y aplica un punto de daño al impactar.
 
 \subsection{Primer zombi del nivel}
 
-El lado derecho del escenario contiene un solo zombi obrero cabezón, con proporciones similares al protagonista. La caminata utiliza ocho fotogramas a 9 FPS y el ataque utiliza seis fotogramas a 10 FPS. El enemigo tiene \component{Sprite Renderer}, \component{Rigidbody 2D}, \component{Capsule Collider 2D}, \component{Animator} y \texttt{ZombiePatrol}.
+El lado derecho del escenario contiene un solo zombi obrero cabezón, con proporciones similares al protagonista. La caminata utiliza ocho fotogramas a 9 FPS y el ataque utiliza seis fotogramas a 10 FPS. El enemigo tiene \component{Sprite Renderer}, \component{Rigidbody 2D}, \component{Capsule Collider 2D}, \component{Animator}, \texttt{ZombiePatrol} y \texttt{ZombieHealth}.
 
 \texttt{ZombiePatrol.cs} persigue al objeto \texttt{Player} por todo el escenario a 1.65 unidades por segundo. Al quedar a 0.9 unidades reproduce \texttt{WorkerZombie\_Attack.anim}. Después de 0.32 segundos activa \texttt{PlayerController2D.Die()}, de modo que el daño coincide con el frame de contacto. El jugador deja de aceptar entradas y reproduce \texttt{Player\_Death.anim} hasta quedar inmóvil.
+
+Al terminar la caída, el script oculta el sprite original del jugador, alinea al zombi con el cuerpo y activa el estado \texttt{Eat}. \texttt{WorkerZombie\_Eat.anim} reproduce en bucle seis frames con sangre estilizada. Cada hoja utiliza pivotes medidos desde su borde inferior para que las poses permanezcan apoyadas sobre el suelo.
+
+\texttt{ZombieHealth.cs} asigna tres puntos de vida al enemigo. Cada bala resta un punto y produce un destello rojo. El tercer disparo cancela su movimiento y ataque, desactiva las colisiones y reproduce los seis frames de \texttt{WorkerZombie\_Death.anim}. La instancia desaparece al terminar la secuencia.
 
 \begin{unitybox}{Project $>$ Assets $>$ Prefabs $>$ WorkerZombie.prefab}
 El zombi está guardado como Prefab reutilizable. En \textbf{Hierarchy} aparece una sola instancia dentro de \texttt{Enemies}, ubicada inicialmente en $(5.25,-2.38,0)$.
@@ -534,6 +549,7 @@ Unity muestra opciones adicionales en el menú superior:
   \item \textbf{Tools $>$ Zombie Game $>$ Configurar personaje jugable}.
   \item \textbf{Tools $>$ Zombie Game $>$ Agregar fondo a la escena}.
   \item \textbf{Tools $>$ Zombie Game $>$ Configurar objetos saltables}.
+  \item \textbf{Tools $>$ Zombie Game $>$ Configurar balas}.
 \end{itemize}
 
 Estas opciones reconstruyen o corrigen elementos importantes sin tener que configurarlos manualmente uno por uno.
@@ -636,7 +652,8 @@ $\square$ & Saltar sobre la barrera & El personaje aterriza sobre la parte visib
 $\square$ & Caminar por un costado & Cae sin chocar con paredes invisibles. \\
 $\square$ & Pulsar \keycap{S} sobre la barrera & Atraviesa la plataforma y vuelve al suelo. \\
 $\square$ & Escuchar durante varios segundos & La música continúa y vuelve a empezar. \\
-$\square$ & Pulsar \keycap{F} estando quieto & Reproduce una vez los seis frames de disparo sin mostrar el tablero de fondo. \\
+$\square$ & Pulsar \keycap{F} estando quieto & Reproduce los frames, crea una bala y esta avanza hacia donde mira el personaje. \\
+$\square$ & Acertar tres disparos al zombi & El enemigo destella con cada impacto y desaparece al tercer golpe. \\
 \bottomrule
 \end{tabularx}
 
@@ -653,7 +670,7 @@ Colisiones y capas & Ground, CapsuleCollider2D, BoxCollider2D y PlatformEffector
 Gestión de assets & Carpetas separadas para arte, audio, animación, materiales, escenas y código & Implementado \\
 Git & Repositorio, .gitignore y commits descriptivos & Implementado \\
 Movimiento y acción & Caminar, saltar, bajar por plataformas y animación de disparo & Implementado \\
-Interacción principal & El zombi persigue, ataca y provoca la muerte animada del jugador & Implementado \\
+Interacción principal & El zombi ataca y las balas le causan daño hasta eliminarlo & Implementado \\
 Prefabs & \texttt{WorkerZombie.prefab} y una instancia en la escena & Implementado \\
 Inicio y reinicio & Inicia con Play, pero no existe una función de reinicio & Pendiente \\
 Video de demostración & Debe grabarse un video de máximo dos minutos & Pendiente \\
@@ -661,16 +678,16 @@ Video de demostración & Debe grabarse un video de máximo dos minutos & Pendien
 \end{tabularx}
 
 \begin{warningbox}{Prioridades para alcanzar la valoración máxima}
-Implementar una interacción verificable como una bala que daña al zombi o un objeto coleccionable, agregar reinicio y comprobar que la consola permanezca sin errores durante la demostración.
+La interacción mediante proyectiles y daño ya está implementada. Las siguientes prioridades son agregar reinicio, una interfaz de vida y comprobar que la consola permanezca sin errores durante la demostración.
 \end{warningbox}
 
 % ------------------------------------------------------------
 \section{Qué falta para convertirlo en un juego completo}
 
 \begin{enumerate}
-  \item Crear proyectiles para que el disparo pueda dañar al zombi.
-  \item Implementar puntos de salud, daño gradual y muerte del enemigo.
   \item Agregar una opción para reiniciar después de morir.
+  \item Mostrar la vida del jugador y del enemigo en la interfaz.
+  \item Agregar recompensas o munición al derrotar al zombi.
   \item Añadir botiquines, agua, baterías u otros coleccionables.
   \item Crear una cámara que siga al jugador.
   \item Incorporar interfaz de vida, objetivo y objetos recogidos.
@@ -691,8 +708,10 @@ El repositorio del proyecto es:
 
 Antes de distribuir el juego se debe comprobar la licencia de cada imagen, sprite y audio. Los recursos externos deben conservar sus archivos de licencia y los créditos exigidos por sus autores. Para futuros elementos se recomienda utilizar recursos CC0 o con autorización explícita para videojuegos.
 
+Las seis voces del enemigo pertenecen a \textit{Zomby SFX Pack}, creado por saturn91 y publicado con licencia CC0 en OpenGameArt. La atribución no es obligatoria, pero el proyecto conserva \path{Assets/Audio/Zombie/LICENSE.txt} para registrar la fuente y la licencia.
+
 \begin{gamebox}{Estado actual del avance}
-El prototipo ya posee escenario, personaje animado, movimiento, salto, colisiones, plataformas, música y un zombi cabezón creado como Prefab. El enemigo persigue, reproduce su ataque y activa la muerte animada del jugador. El siguiente gran paso recomendado es implementar proyectiles, salud del enemigo y reinicio.
+El prototipo ya posee escenario, personaje animado, movimiento, salto, colisiones, plataformas, música y un zombi cabezón creado como Prefab. El enemigo persigue y ataca al jugador; el personaje dispara proyectiles animados que causan daño y eliminan al zombi después de tres impactos. El siguiente gran paso recomendado es implementar reinicio e interfaz de vida.
 \end{gamebox}
 
 \end{document}

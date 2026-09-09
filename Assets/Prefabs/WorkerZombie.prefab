@@ -13,7 +13,10 @@ GameObject:
   - component: {fileID: 7587297095518791426}
   - component: {fileID: 7845346477325078979}
   - component: {fileID: 3665648853168806235}
+  - component: {fileID: 4621901181106882313}
+  - component: {fileID: 371897896850058303}
   - component: {fileID: 745126860834057390}
+  - component: {fileID: 2493680425806016884}
   m_Layer: 0
   m_Name: WorkerZombie
   m_TagString: Untagged
@@ -181,6 +184,125 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!82 &4621901181106882313
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953737246658074462}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.65
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.2
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &371897896850058303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953737246658074462}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab066a15e8d2e8c45a90e13e3472d540, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieAudio
+  idleClips:
+  - {fileID: 8300000, guid: e262d48c1695e8a4daccb36d6ec6cd71, type: 3}
+  - {fileID: 8300000, guid: bf67395bee4f0cd44ad263066f33b1f6, type: 3}
+  attackClips:
+  - {fileID: 8300000, guid: 55c0e96d84d34e34199da0088491bd28, type: 3}
+  - {fileID: 8300000, guid: 834a5b9b96d20de488d1d1c375d00eb7, type: 3}
+  hurtClip: {fileID: 8300000, guid: 4586112984f5c414c8aac599bec17f99, type: 3}
+  deathClip: {fileID: 8300000, guid: e7e04a81178ff4749bd58290d5f83ccc, type: 3}
+  idleDelayRange: {x: 3.5, y: 6.5}
+  pitchRange: {x: 0.9, y: 1.1}
 --- !u!114 &745126860834057390
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -199,3 +321,19 @@ MonoBehaviour:
   stoppingDistance: 0.9
   damageDelay: 0.32
   attackDuration: 0.65
+  eatingDelay: 0.45
+--- !u!114 &2493680425806016884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2953737246658074462}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e135bd73b531a2498f4d7278d9c5400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieHealth
+  maximumHealth: 3
+  hitFlashDuration: 0.12
+  deathAnimationDuration: 0.8
