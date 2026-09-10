@@ -21,6 +21,7 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Animacion de ataque sincronizada con la muerte del personaje.
 - Voces del zombie para ambiente, ataque, daño y muerte.
 - Animacion en bucle del zombie alimentandose del jugador despues del Game Over.
+- Pantalla de Game Over con oscurecimiento, pausa, Reintentar y Salir.
 
 ## Controles
 
@@ -30,6 +31,7 @@ Prototipo funcional de videojuego 2D desarrollado con Unity 6.3 LTS.
 - Soltar Espacio anticipadamente: salto corto.
 - S o flecha abajo: bajar a traves de una plataforma.
 - F o Ctrl izquierdo: disparar una bala estando quieto.
+- Botón Reintentar: recargar la escena después de morir.
 
 ## Documentacion
 

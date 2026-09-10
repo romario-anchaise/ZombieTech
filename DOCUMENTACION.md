@@ -180,6 +180,7 @@ Assets/
 | `BulletProjectile.cs` | Mueve la bala, controla su tiempo de vida y aplica daño cuando impacta al zombi. |
 | `ZombieHealth.cs` | Gestiona los 3 puntos de vida, el destello de impacto y la eliminación del enemigo. |
 | `ZombieAudio.cs` | Reproduce voces ambientales, ataques, daño y muerte con pequeñas variaciones de tono. |
+| `GameOverUI.cs` | Construye la interfaz final, oscurece y pausa la partida, reduce la música y permite reiniciar o salir. |
 | `BulletSetupBuilder.cs` | Divide la hoja de bala, crea su animación, material, controlador y prefab, y lo asigna al jugador. |
 
 Los scripts de la carpeta `Editor` solo se ejecutan dentro del editor de Unity. Los scripts de la carpeta `Scripts` forman parte del juego final.
@@ -245,12 +246,12 @@ Si Unity informa que la escena cambió en el disco, se debe seleccionar **Reload
 - No existen objetos coleccionables ni inventario.
 - La cámara todavía no sigue al jugador durante un nivel extenso.
 - Solo existe una escena jugable.
-- No se han creado menús de inicio, pausa o finalización.
+- No se han creado todavía un menú principal ni un menú de pausa; la pantalla de Game Over ya está implementada.
 - No se ha generado una compilación ejecutable para distribución.
 
 ## 14. Próximas mejoras recomendadas
 
-1. Agregar una opción para reiniciar después de morir.
+1. Crear un menú principal sencillo.
 2. Mostrar la vida del jugador y del enemigo en la interfaz.
 3. Agregar recompensas o munición al derrotar al zombi.
 4. Añadir botiquines, baterías y otros objetos coleccionables.
@@ -443,7 +444,7 @@ animator.SetBool("IsGrounded", isGrounded);
 | Personaje con movimiento y acción | Movimiento, salto, descenso por plataformas y animación de disparo | Implementado |
 | Mecánica de interacción | El zombi ataca al jugador y las balas le causan daño hasta eliminarlo | Implementado |
 | Prefabs repetitivos | `WorkerZombie.prefab` permite crear enemigos reutilizables; la escena usa una instancia | Implementado |
-| Inicio y reinicio | La escena inicia con **Play**, pero aún no existe botón o condición de reinicio | Pendiente |
+| Inicio y reinicio | La escena inicia con **Play** y `GameOverUI` permite reiniciarla con el botón **Reintentar** | Implementado |
 | Video de demostración | Debe grabarse un video de máximo dos minutos mostrando gameplay y explicando una parte del código | Pendiente |
 
-La interacción principal ya es verificable mediante balas que impactan y dañan al zombi. Los siguientes pasos prioritarios son agregar reinicio, una interfaz de vida y comprobar que la consola permanezca libre de errores durante la demostración.
+La interacción principal y el reinicio ya son verificables. Los siguientes pasos prioritarios son grabar el video de demostración, añadir una interfaz de vida y comprobar que la consola permanezca libre de errores durante la presentación.

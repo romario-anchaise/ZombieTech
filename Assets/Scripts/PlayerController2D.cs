@@ -244,6 +244,8 @@ public sealed class PlayerController2D : MonoBehaviour
             animator.SetBool(GroundedHash, true);
             animator.SetTrigger(DieHash);
         }
+
+        GameOverUI.ShowAfterDelay(2.2f);
     }
 
     public void HideForEating()
